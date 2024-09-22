@@ -28,7 +28,7 @@ const ExercisePage = () => {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Authorization başlığını ekle
+          'Authorization': `Bearer ${token}`, 
         },
       });
 

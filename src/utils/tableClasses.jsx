@@ -2,7 +2,7 @@ import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Trash2, Edit, C
 
 export const tableClasses = {
   // Genel table container
-  container: "w-full overflow-hidden bg-white shadow-md rounded-lg",
+  container: "w-full oxverflow-hidden bg-white shadow-md rounded-lg",
   title: "text-3xl font-bold text-gray-800 mb-6",
   addButton: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block",
   filterContainer: "text-sm flex justify-between items-center mb-4 space-x-4",

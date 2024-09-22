@@ -8,6 +8,10 @@ const authRoute = require("./routes/auth");
 const app = express();
 const videoRoute = require('./routes/video');
 const exerciseRoute = require('./routes/exercise');
+const todoRoute = require('./routes/todo'); 
+const siteRoute = require('./routes/site');
+const urlRoute = require('./routes/url'); 
+const excelRoute = require('./routes/excel');
 
 app.use(express.json());
 app.use(passport.initialize());
@@ -32,6 +36,11 @@ app.use((req, res, next) => {
 app.use("/auth", authRoute);
 app.use('/api/videos', videoRoute);
 app.use('/api/exercises', exerciseRoute);
+app.use('/api/todos', todoRoute); 
+app.use('/api/sites', siteRoute);
+app.use('/api/urls', urlRoute);  
+app.use('/api/excel', excelRoute);
+
 
 app.listen("5000", () => {
   console.log("Server is running!");

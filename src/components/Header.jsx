@@ -23,6 +23,8 @@ const Header = () => {
             <>
             {user.role === 'admin' && (
   <>
+    <Link to="/todos" className="text-blue-500 hover:text-blue-700 font-medium">Todos</Link>
+    <Link to="/sites" className="text-blue-500 hover:text-blue-700 font-medium">Sites</Link>
     <Link to="/videos" className="text-blue-500 hover:text-blue-700 font-medium mr-4">Videos</Link>
     <Link to="/exercises" className="text-blue-500 hover:text-blue-700 font-medium">Exercises</Link>
   </>
