@@ -22,8 +22,11 @@ const Header = () => {
           {user ? (
             <>
             {user.role === 'admin' && (
-              <Link
-to="/videos"className="text-blue-500 hover:text-blue-700 font-medium">Videos</Link>)}
+  <>
+    <Link to="/videos" className="text-blue-500 hover:text-blue-700 font-medium mr-4">Videos</Link>
+    <Link to="/exercises" className="text-blue-500 hover:text-blue-700 font-medium">Exercises</Link>
+  </>
+)}
               {!imageError ? (
                 <img
                   src={user.image}

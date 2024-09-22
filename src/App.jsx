@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from "./contexts/AuthContext";
 import Layout from './layouts/Layout';
 import VideosPage from "./pages/VideosPage";
+import ExercisesPage from "./pages/ExercisePage";
+import StartExercises from './components/Exercises/StartExercise';
+
 
 const App = () => {
   return (
@@ -11,7 +14,9 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route path="videos" element={<VideosPage />} />
-        </Route>
+          <Route path="exercises" element={<ExercisesPage />} />
+          <Route path="/start-exercise" element={<StartExercises />} />
+          </Route>
       </Routes>
     </AuthProvider>
   </Router>

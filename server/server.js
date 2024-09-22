@@ -7,6 +7,7 @@ const passport = require("passport");
 const authRoute = require("./routes/auth");
 const app = express();
 const videoRoute = require('./routes/video');
+const exerciseRoute = require('./routes/exercise');
 
 app.use(express.json());
 app.use(passport.initialize());
@@ -30,6 +31,7 @@ app.use((req, res, next) => {
 
 app.use("/auth", authRoute);
 app.use('/api/videos', videoRoute);
+app.use('/api/exercises', exerciseRoute);
 
 app.listen("5000", () => {
   console.log("Server is running!");
