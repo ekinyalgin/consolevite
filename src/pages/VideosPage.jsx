@@ -3,11 +3,11 @@ import VideoForm from '../components/Videos/VideoForm';
 import VideoList from '../components/Videos/VideoList';
 import Notification from '../utils/Notification';
 import { XCircle } from 'lucide-react';
-import { AuthContext } from '../contexts/AuthContext'; // AuthContext'i import edin
+import { AuthContext } from '../contexts/AuthContext'; // AuthContext'ten user ve loading state'ini al
 import { useNavigate } from 'react-router-dom';
 
 const VideosPage = () => {
-    const { user, loading } = useContext(AuthContext); // AuthContext'ten user ve loading state'ini al
+    const { user, loading } = useContext(AuthContext);
     const navigate = useNavigate();
     const [videos, setVideos] = useState([]);
     const [search, setSearch] = useState('');
@@ -33,7 +33,20 @@ const VideosPage = () => {
 
     const fetchVideos = async (initialLoad = false) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/videos?limit=${limit}&offset=${initialLoad ? 0 : offset}`);
+            const token = localStorage.getItem('token'); // Token'ı localStorage'dan al
+            
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/videos?limit=${limit}&offset=${initialLoad ? 0 : offset}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // Authorization başlığını ekle
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch videos');
+            }
+
             const data = await response.json();
 
             if (initialLoad) {
@@ -44,7 +57,7 @@ const VideosPage = () => {
 
             setOffset((prevOffset) => prevOffset + limit);
         } catch (error) {
-            showNotification('Failed to fetch videos', 'error');
+            showNotification(error.message || 'Failed to fetch videos', 'error');
         }
     };
 

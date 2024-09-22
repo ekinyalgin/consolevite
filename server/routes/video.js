@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { authorize, isAdmin } = require('../middlewares/auth');
 const videoController = require('../controllers/videoController');
+const { authorize, isAdmin } = require('../middlewares/auth');
 
-router.get('/', videoController.getVideos);
-router.post('/', videoController.addVideo);
-router.put('/:id', videoController.updateVideo);
-router.delete('/:id', videoController.deleteVideo);
+router.get('/', authorize, isAdmin, videoController.getVideos);
+router.post('/',authorize, isAdmin, videoController.addVideo);
+router.put('/:id', authorize, isAdmin, videoController.updateVideo);
+router.delete('/:id', authorize, isAdmin, videoController.deleteVideo);
 
 module.exports = router;
