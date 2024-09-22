@@ -7,7 +7,7 @@ import CategoryPopup from './CategoryPopup';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const SiteForm = ({ onNotification, onSiteAdded, selectedSite, resetSelectedSite }) => {
+const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {  // onNotification prop'unu ekleyin
   const [formData, setFormData] = useState({
     domainName: '',
     monthlyVisitors: '',
@@ -26,15 +26,15 @@ const SiteForm = ({ onNotification, onSiteAdded, selectedSite, resetSelectedSite
   }, []);
 
   useEffect(() => {
-    if (selectedSite) {
+    if (initialData) {
       setFormData({
-        domainName: selectedSite.domain_name,
-        monthlyVisitors: selectedSite.monthly_visitors,
-        language: selectedSite.language,
-        category: selectedSite.category,
+        domainName: initialData.domain_name,
+        monthlyVisitors: initialData.monthly_visitors,
+        language: initialData.language,
+        category: initialData.category,
       });
     }
-  }, [selectedSite]);
+  }, [initialData]);
 
   const fetchLanguages = async () => {
     try {
@@ -63,31 +63,16 @@ const SiteForm = ({ onNotification, onSiteAdded, selectedSite, resetSelectedSite
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      if (selectedSite) {
-        const response = await axios.put(`${API_URL}/sites/${selectedSite.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        onNotification('Site updated successfully', 'success');
-        onSiteAdded(response.data);
-      } else {
-        const response = await axios.post(`${API_URL}/sites`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        onNotification('Site added successfully', 'success');
-        onSiteAdded(response.data);
-      }
-      resetForm();
-    } catch (error) {
-      onNotification('Error saving site', 'error');
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({ domainName: '', monthlyVisitors: '', language: '', category: '' });
-    resetSelectedSite(); // Edit işlemi tamamlandığında formu resetler
+    const submittedData = {
+      id: initialData?.id, // Eğer güncelleme ise, id'yi ekleyin
+      domain_name: formData.domainName,
+      monthly_visitors: parseInt(formData.monthlyVisitors, 10),
+      language: formData.language,
+      category: formData.category
+    };
+    onSubmit(submittedData);
   };
 
   return (
@@ -152,13 +137,11 @@ const SiteForm = ({ onNotification, onSiteAdded, selectedSite, resetSelectedSite
       </div>
       <div className="flex space-x-4">
         <button type="submit" className={tableClasses.formButton}>
-          {selectedSite ? 'Update' : 'Add'}
+          {initialData ? 'Update' : 'Add'} Site
         </button>
-        {selectedSite && (
-          <button type="button" onClick={resetForm} className={tableClasses.cancelButton}>
-            X
-          </button>
-        )}
+        <button type="button" onClick={onCancel} className={tableClasses.cancelButton}>
+          Cancel
+        </button>
       </div>
 
       {/* Language Popup */}

@@ -1,22 +1,27 @@
-// components/Sites/SiteList.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import BulkUpdateVisitors from './BulkUpdateVisitors'; 
+import SiteForm from './SiteForm';
 import tableClasses from '../../utils/tableClasses';
-import { Link } from 'react-router-dom';
 import { CheckSquare, Eye, Download, Edit, Trash2, Settings } from 'lucide-react';
-import BulkUpdateVisitors from './BulkUpdateVisitors';
+import { Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const SiteList = ({ onNotification, onEditSite }) => {
+const SiteList = ({ onNotification }) => {
   const [sites, setSites] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(localStorage.getItem('activeCategory') || null);
-  const [showBulkUpdate, setShowBulkUpdate] = useState(false); // Bulk Update formu için state
+  const [selectedSites, setSelectedSites] = useState([]); 
+  const [showBulkUpdate, setShowBulkUpdate] = useState(false); 
   const token = localStorage.getItem('token');
+  const [languages, setLanguages] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingSite, setEditingSite] = useState(null);
 
   useEffect(() => {
     fetchCategories();
+    fetchLanguages();
   }, []);
 
   useEffect(() => {
@@ -39,16 +44,95 @@ const SiteList = ({ onNotification, onEditSite }) => {
     }
   };
 
+  const fetchLanguages = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/sites/languages`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setLanguages(response.data);
+    } catch (error) {
+      onNotification('Error fetching languages', 'error');
+    }
+  };
+
+  const handleDownload = async (domainName, language, monthlyVisitors) => {
+        try {
+          const response = await axios.get(`${API_URL}/excel/download/${domainName}`, {
+            params: { language, monthlyVisitors },
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        } catch (error) {
+          onNotification('Error while downloading the file', 'error');
+        }
+      };
+
   const fetchSitesByCategory = async (category) => {
     try {
       const response = await axios.get(`${API_URL}/sites`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const filteredSites = response.data.filter((site) => site.category === category);
-      setSites(filteredSites);
+
+      const filteredSites = response.data.filter(site => site.category === category);
+      
+      const sitesWithReviewStatus = await Promise.all(filteredSites.map(async (site) => {
+        // Excel dosyasının olup olmadığını ve URL durumunu kontrol edin
+        const checkResponse = await axios.get(`${API_URL}/excel/check-excel/${site.domain_name}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const hasExcelFile = checkResponse.data.hasFile;
+
+        // URL'leri kontrol etme (not reviewed kısmında URL var mı?)
+        const urlStatusResponse = await axios.get(`${API_URL}/urls/status/${site.domain_name}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const { hasNotReviewed, hasReviewed } = urlStatusResponse.data;
+
+        return {
+          ...site,
+          hasExcelFile,
+          hasNotReviewed,
+          hasReviewed,
+        };
+      }));
+
+      setSites(sitesWithReviewStatus);
       localStorage.setItem('activeCategory', category);
     } catch (error) {
       onNotification('Error fetching sites', 'error');
+    }
+  };
+
+  const handleCheckboxChange = (site) => {
+    if (selectedSites.some(selected => selected.id === site.id)) {
+      setSelectedSites(selectedSites.filter(selected => selected.id !== site.id));
+    } else {
+      setSelectedSites([...selectedSites, site]);
+    }
+  };
+
+  const handleBulkDownload = async () => {
+    if (selectedSites.length === 0) {
+      onNotification('Please select at least one site', 'error');
+      return;
+    }
+
+    try {
+      await axios.post(`${API_URL}/excel/download-multiple`, 
+        { 
+          sites: selectedSites.map(site => ({
+            domainName: site.domain_name,
+            language: site.language,
+            monthlyVisitors: site.monthly_visitors
+          }))
+        }, 
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      onNotification('Bulk download started successfully', 'success');
+    } catch (error) {
+      onNotification('Error during bulk download', 'error');
     }
   };
 
@@ -66,8 +150,56 @@ const SiteList = ({ onNotification, onEditSite }) => {
     }
   };
 
+  const handleAddClick = () => {
+    setEditingSite(null);
+    setShowForm(true);
+  };
+
+  const handleEditClick = (site) => {
+    setEditingSite(site);
+    setShowForm(true);
+  };
+
+  const handleSiteSubmit = async (siteData) => {
+    try {
+      if (siteData.id) {
+        // Güncelleme işlemi
+        const response = await axios.put(`${API_URL}/sites/${siteData.id}`, siteData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setSites(prevSites => prevSites.map(site => site.id === siteData.id ? { ...site, ...response.data } : site));
+        onNotification('Site updated successfully', 'success');
+      } else {
+        // Ekleme işlemi
+        const response = await axios.post(`${API_URL}/sites`, siteData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setSites(prevSites => [...prevSites, response.data]);
+        onNotification('Site added successfully', 'success');
+      }
+      setShowForm(false);
+      setEditingSite(null);
+    } catch (error) {
+      console.error('Error saving site:', error);
+      onNotification(`Error saving site: ${error.response?.data?.error || error.message}`, 'error');
+    }
+  };
+
   return (
-    <div className={tableClasses.container}>
+    <div>
+      <button onClick={handleAddClick} className="mb-4 bg-blue-500 text-white px-4 py-2 rounded">
+        Add Site
+      </button>
+
+      {showForm && (
+        <SiteForm
+          onSubmit={handleSiteSubmit}
+          onCancel={() => setShowForm(false)}
+          initialData={editingSite}
+          onNotification={onNotification}  // Bu satırı ekleyin
+        />
+      )}
+
       <div className="mb-4 border-b border-gray-200 flex justify-between">
         <ul className="flex flex-wrap -mb-px">
           {categories.map((category) => (
@@ -89,10 +221,11 @@ const SiteList = ({ onNotification, onEditSite }) => {
           className="text-blue-500 hover:text-blue-700"
           onClick={() => setShowBulkUpdate(!showBulkUpdate)}
         >
-          <Settings /> Bulk Update
+          <Settings /> Bulk Update Visitors
         </button>
       </div>
 
+      {/* BulkUpdateVisitors Bileşeni */}
       {showBulkUpdate && (
         <BulkUpdateVisitors
           activeCategory={activeCategory}
@@ -115,24 +248,32 @@ const SiteList = ({ onNotification, onEditSite }) => {
           {sites.map((site) => (
             <tr key={site.id} className={tableClasses.tableRow}>
               <td className={tableClasses.tableCell}>
-                <input type="checkbox" />
+                <input
+                  type="checkbox"
+                  checked={selectedSites.some(selected => selected.id === site.id)}
+                  onChange={() => handleCheckboxChange(site)}
+                />
               </td>
               <td className={tableClasses.tableCell}>{site.domain_name}</td>
               <td className={tableClasses.tableCell}>{site.monthly_visitors}</td>
               <td className={tableClasses.tableCell}>{site.language}</td>
               <td className={tableClasses.tableCell}>
                 <div className={tableClasses.actionContainer}>
-                  <Link to={`/admin/url-review/${site.domain_name}`} className={tableClasses.noteIcon}>
-                    <Eye />
-                  </Link>
-                  <button className={tableClasses.editIcon} onClick={() => onEditSite(site)}>
+                  {site.hasNotReviewed && (
+                    <Link to={`/url-review/${site.domain_name}`} className={tableClasses.noteIcon}>
+                      <Eye />
+                    </Link>
+                  )}
+                  {site.hasExcelFile && (
+                    <button className={tableClasses.downloadIcon} onClick={() => handleDownload(site.domain_name, site.language, site.monthly_visitors)}>
+                      <Download />
+                    </button>
+                  )}
+                  <button className={tableClasses.editIcon} onClick={() => handleEditClick(site)}>
                     <Edit />
                   </button>
                   <button className={tableClasses.deleteIcon} onClick={() => handleDelete(site.id)}>
                     <Trash2 />
-                  </button>
-                  <button className={tableClasses.editIcon}>
-                    <Download />
                   </button>
                 </div>
               </td>
@@ -147,6 +288,16 @@ const SiteList = ({ onNotification, onEditSite }) => {
           )}
         </tbody>
       </table>
+
+      {/* Download Report Linki */}
+      <div className="mt-4">
+        <button 
+          onClick={handleBulkDownload}
+          className="text-blue-500 hover:text-blue-700"
+        >
+          Download Report
+        </button>
+      </div>
     </div>
   );
 };

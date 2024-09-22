@@ -7,8 +7,7 @@ import TodoPage from './pages/TodoPage';
 import ExercisesPage from "./pages/ExercisePage";
 import StartExercises from './components/Exercises/StartExercise';
 import SitePage from './pages/SitePage';
-
-
+import UrlReview from './components/Sites/UrlReview';
 
 const App = () => {
   return (
@@ -21,6 +20,7 @@ const App = () => {
           <Route path="exercises" element={<ExercisesPage />} />
           <Route path="/start-exercise" element={<StartExercises />} />
           <Route path="sites" element={<SitePage />} />
+          <Route path="/url-review/:domainName" element={<UrlReview />} />
           </Route>
       </Routes>
     </AuthProvider>

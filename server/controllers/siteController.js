@@ -67,46 +67,67 @@ exports.createSite = async (req, res) => {
   }
 };
 
+// siteController.js - updateSite fonksiyonundaki güncelleme
 exports.updateSite = async (req, res) => {
-  const { id } = req.params;
-  const { domainName, monthlyVisitors, language, category } = req.body;
-  try {
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      
-      await connection.query(
-        'UPDATE sites SET domain_name = ?, monthly_visitors = ? WHERE id = ?',
-        [domainName, monthlyVisitors, id]
-      );
-      await connection.query('DELETE FROM site_languages WHERE site_id = ?', [id]);
-      await connection.query('DELETE FROM site_categories WHERE site_id = ?', [id]);
-      
-      if (language) {
-        await connection.query(
-          'INSERT INTO site_languages (site_id, language_id) VALUES (?, ?)',
-          [id, language]
-        );
-      }
-      if (category) {
-        await connection.query(
-          'INSERT INTO site_categories (site_id, category_id) VALUES (?, ?)',
-          [id, category]
-        );
-      }
-      
-      await connection.commit();
-      res.json({ message: 'Site updated successfully' });
-    } catch (e) {
-      await connection.rollback();
-      throw e;
-    } finally {
-      connection.release();
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error', details: err.message });
-  }
+	const { id } = req.params;
+	const { domain_name, monthly_visitors, language, category } = req.body;
+	
+	try {
+		const connection = await pool.getConnection();
+		try {
+			await connection.beginTransaction();
+  
+			console.log('Updating site:', { id, domain_name, monthly_visitors, language, category });
+  
+			if (!domain_name || domain_name.trim() === '') {
+				throw new Error('domain_name cannot be null or empty');
+			}
+  
+			// Sites tablosunu güncelle
+			await connection.query(
+				'UPDATE sites SET domain_name = ?, monthly_visitors = ? WHERE id = ?',
+				[domain_name, monthly_visitors, id]
+			);
+  
+			// Dili güncelle
+			if (language) {
+				await connection.query('DELETE FROM site_languages WHERE site_id = ?', [id]);
+				const [langResult] = await connection.query('SELECT id FROM sites_langs WHERE name = ?', [language]);
+				if (langResult.length > 0) {
+					await connection.query(
+						'INSERT INTO site_languages (site_id, language_id) VALUES (?, ?)',
+						[id, langResult[0].id]
+					);
+				}
+			}
+  
+			// Kategoriyi güncelle
+			if (category) {
+				await connection.query('DELETE FROM site_categories WHERE site_id = ?', [id]);
+				const [categoryResult] = await connection.query('SELECT id FROM sites_cats WHERE name = ?', [category]);
+				if (categoryResult.length > 0) {
+					await connection.query(
+						'INSERT INTO site_categories (site_id, category_id) VALUES (?, ?)',
+						[id, categoryResult[0].id]
+					);
+				}
+			}
+  
+			await connection.commit();
+			
+			// Güncellenmiş siteyi getir ve yanıt olarak gönder
+			const [updatedSite] = await connection.query('SELECT * FROM sites WHERE id = ?', [id]);
+			res.json(updatedSite[0]);
+		} catch (e) {
+			await connection.rollback();
+			throw e;
+		} finally {
+			connection.release();
+		}
+	} catch (err) {
+		console.error('Error updating site:', err);
+		res.status(500).json({ error: 'Server error', details: err.message });
+	}
 };
 
 exports.deleteSite = async (req, res) => {
@@ -122,8 +143,8 @@ exports.deleteSite = async (req, res) => {
 
 exports.getLanguages = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM sites_langs ORDER BY name');
-    res.json(rows || []);
+    const [languages] = await pool.query('SELECT * FROM sites_langs');
+    res.json(languages);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

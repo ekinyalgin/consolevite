@@ -15,7 +15,7 @@ const Layout = () => {
         <aside className="w-2/12">
           <LeftSidebar />
         </aside>
-        <section className="w-8/12">
+        <section className="w-full">
           
           <Outlet />
         </section>

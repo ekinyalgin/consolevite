@@ -1,12 +1,13 @@
 const path = require('path');
-const fs = require('fs').promises;
+const fs = require('fs');
 const xlsx = require('xlsx');
 const downloadReport = require('../utils/download');
+const pool = require('../config/db');
 
 exports.getExcelFiles = async (req, res) => {
   try {
     const tmpDir = path.join(process.cwd(), 'public', 'site', 'tmp');
-    const files = await fs.readdir(tmpDir);
+    const files = await fs.promises.readdir(tmpDir);
     const xlsxFiles = files.filter(file => file.endsWith('.xlsx'));
     res.json(xlsxFiles);
   } catch (error) {
@@ -15,32 +16,51 @@ exports.getExcelFiles = async (req, res) => {
   }
 };
 
-exports.getExcelContentByDomain = async (req, res) => {
-  try {
-    const { domainName } = req.params;
-    const filePath = path.join(process.cwd(), 'public', 'site', 'tmp', `${domainName}.xlsx`);
-    try {
-      await fs.access(filePath);
-    } catch (error) {
-      return res.status(404).json({ error: 'Excel file not found' });
-    }
-    const workbook = xlsx.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(sheet, { header: 1 });
-    const urls = data.slice(1).map(row => row[0]).filter(Boolean);
-    res.json(urls);
-  } catch (error) {
-    console.error('Error reading Excel file:', error);
-    res.status(500).json({ error: 'Error reading Excel file', details: error.message });
-  }
-};
+exports.getExcelContent = async (req, res) => {
+	const { domainName } = req.params;
+	
+	try {
+	  const filePath = path.join(process.cwd(), 'public', 'site', 'tmp', `${domainName}.xlsx`);
+  
+	  if (!fs.existsSync(filePath)) {
+		return res.status(404).json({ error: 'Excel file not found' });
+	  }
+  
+	  const workbook = xlsx.readFile(filePath);
+	  const sheetName = workbook.SheetNames[0];
+	  const worksheet = workbook.Sheets[sheetName];
+	  
+	  const jsonData = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+  
+	  // Find the index of the "url" or "URL" column
+	  const headerRow = jsonData[0];
+	  const urlColumnIndex = headerRow.findIndex(col => 
+		typeof col === 'string' && col.toLowerCase() === 'url'
+	  );
+  
+	  if (urlColumnIndex === -1) {
+		return res.status(400).json({ error: 'URL column not found in Excel file' });
+	  }
+  
+	  // Extract URLs from the correct column
+	  const urls = jsonData.slice(1).map(row => row[urlColumnIndex]).filter(url => url);
+  
+	  if (urls.length === 0) {
+		return res.status(404).json({ error: 'No URLs found in Excel file' });
+	  }
+  
+	  return res.json(urls);
+	} catch (error) {
+	  console.error('Error fetching Excel content:', error);
+	  res.status(500).json({ error: 'Error reading Excel content' });
+	}
+  };
 
 exports.checkExcelFile = async (req, res) => {
   const { domainName } = req.params;
   try {
     const filePath = path.join(process.cwd(), 'public', 'site', 'tmp', `${domainName}.xlsx`);
-    const fileExists = await fs.access(filePath).then(() => true).catch(() => false);
+    const fileExists = await fs.promises.access(filePath).then(() => true).catch(() => false);
     res.json({ hasFile: fileExists });
   } catch (error) {
     console.error('Error checking Excel file:', error);
@@ -48,41 +68,66 @@ exports.checkExcelFile = async (req, res) => {
   }
 };
 
-exports.downloadReport = async (req, res) => {
-  const { domainName } = req.params;
-  try {
-    const [siteResult] = await pool.query('SELECT * FROM sites WHERE domain_name = ?', [domainName]);
-    if (!siteResult.length) {
-      return res.status(404).json({ error: 'Site not found' });
-    }
-    const site = siteResult[0];
-    const [languageResult] = await pool.query(`
-      SELECT l.name AS language
-      FROM site_languages sl
-      JOIN sites_langs l ON sl.language_id = l.id
-      WHERE sl.site_id = ?`, [site.id]);
-    const language = languageResult.length ? languageResult[0].language : null;
-    await downloadReport({ domainName: site.domain_name, language: language || 'default', monthlyVisitors: site.monthly_visitors });
-    res.json({ message: 'Download started' });
-  } catch (error) {
-    console.error('Error starting download:', error);
-    res.status(500).json({ error: 'Error starting download' });
-  }
-};
-
+exports.downloadExcel = async (req, res) => {
+	const domainName = req.params.domainName;
+	const { language, monthlyVisitors } = req.query;
+  
+	res.setHeader('Content-Type', 'text/event-stream');
+	res.setHeader('Cache-Control', 'no-cache');
+	res.setHeader('Connection', 'keep-alive');
+  
+	try {
+	  await downloadReport({
+		domainName,
+		language,
+		monthlyVisitors,
+		onProgress: (message) => {
+		  res.write(`data: ${JSON.stringify({ message })}\n\n`);
+		}
+	  });
+  
+	  const filePath = path.join(process.cwd(), 'public', 'site', 'tmp', `${domainName}.xlsx`);
+	  if (fs.existsSync(filePath)) {
+		res.write(`data: ${JSON.stringify({ message: `Download completed for ${domainName}` })}\n\n`);
+	  } else {
+		res.write(`data: ${JSON.stringify({ message: `File not found for ${domainName}` })}\n\n`);
+	  }
+	  res.end();
+	} catch (error) {
+	  console.error('Error during download:', error);
+	  res.write(`data: ${JSON.stringify({ message: `An error occurred while downloading the file for ${domainName}` })}\n\n`);
+	  res.end();
+	}
+  };
+  
 exports.bulkDownloadReports = async (req, res) => {
-  const { sites } = req.body;
-  try {
-    for (let site of sites) {
-      await downloadReport({
-        domainName: site.domain_name,
-        language: site.language,
-        monthlyVisitors: site.monthly_visitors
-      });
-    }
-    res.json({ message: 'Bulk download started' });
-  } catch (error) {
-    console.error('Error starting bulk download:', error);
-    res.status(500).json({ error: 'Error starting bulk download' });
-  }
-};
+	const { sites } = req.body; // [{ domainName, language, monthlyVisitors }]
+	
+	try {
+	  // Tüm indirme işlemlerini Promise'lerle başlatıyoruz
+	  const downloadPromises = sites.map(site =>
+		downloadReport({
+		  domainName: site.domainName,
+		  language: site.language,
+		  monthlyVisitors: site.monthlyVisitors,
+		  onProgress: (message) => {
+			console.log(`Bulk download for ${site.domainName}: ${message}`);
+		  }
+		})
+	  );
+  
+	  // Belirli sayıda eşzamanlı işlemin tamamlanmasını bekliyoruz
+	  const results = await Promise.all(downloadPromises.slice(0, 5)); // İlk 5 tanesi için aynı anda indirme
+  
+	  // Geriye kalanları da 5'erli dilimlerle başlatabilirsiniz
+	  for (let i = 5; i < downloadPromises.length; i += 5) {
+		const batch = downloadPromises.slice(i, i + 5);
+		await Promise.all(batch);
+	  }
+  
+	  res.status(200).json({ message: 'Bulk download completed' });
+	} catch (error) {
+	  console.error('Error during bulk download:', error);
+	  res.status(500).json({ error: 'Error during bulk download' });
+	}
+  };

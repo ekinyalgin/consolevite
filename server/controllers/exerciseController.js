@@ -1,5 +1,5 @@
 // controllers/exerciseController.js
-const db = require('../config/db'); // Veritabanı bağlantınızı içe aktarıyoruz
+const db = require('../config/db'); 
 
 // Tüm egzersizleri getirme
 exports.getAllExercises = async (req, res) => {

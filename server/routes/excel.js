@@ -3,11 +3,11 @@ const router = express.Router();
 const excelController = require('../controllers/excelController');
 const { authorize, isAdmin } = require('../middlewares/auth');
 
+// Check that all these routes are using existing controller methods
 router.get('/excel-files', authorize, excelController.getExcelFiles);
-router.get('/excel-content/:domainName', authorize, excelController.getExcelContentByDomain);
 router.get('/check-excel/:domainName', authorize, excelController.checkExcelFile);
-
-router.get('/download/:domainName', authorize, isAdmin, excelController.downloadReport);
+router.get('/content/:domainName', authorize, isAdmin, excelController.getExcelContent);
+router.get('/download/:domainName', excelController.downloadExcel);
 router.post('/download-multiple', authorize, isAdmin, excelController.bulkDownloadReports);
 
 module.exports = router;

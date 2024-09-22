@@ -1,0 +1,339 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useParams } from 'react-router-dom';
+import tableClasses from '../../utils/tableClasses';
+import Notification from '../../utils/Notification';
+import { CheckSquare, Trash2, BarChart2, Check } from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL;
+
+const UrlReview = () => {
+  const { domainName } = useParams();
+  const [notReviewedUrls, setNotReviewedUrls] = useState([]);
+  const [reviewedUrls, setReviewedUrls] = useState([]);
+  const [excelUrls, setExcelUrls] = useState([]);
+  const [notification, setNotification] = useState(null);
+  const [showReviewed, setShowReviewed] = useState(false);
+  const [selectedExcelUrls, setSelectedExcelUrls] = useState([]);
+  const [showExcelContent, setShowExcelContent] = useState(false);
+  const token = localStorage.getItem('token');
+
+  const fetchUrls = async () => {
+    try {
+      if (domainName) {
+        const response = await axios.get(`${API_URL}/urls/${domainName}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setNotReviewedUrls(response.data.notReviewed);
+        setReviewedUrls(response.data.reviewed);
+      } else {
+        console.error('Domain name is undefined');
+      }
+    } catch (error) {
+      setNotification({ message: 'Error fetching URLs', type: 'error' });
+    }
+  };
+
+  useEffect(() => {
+    if (domainName) {
+      fetchUrls();
+    }
+  }, [domainName]);
+
+  const fetchNotReviewedUrls = async () => {
+    if (!domainName) {
+      setNotification({ message: 'Invalid domain name', type: 'error' });
+      return;
+    }
+    try {
+      const response = await axios.get(`${API_URL}/urls/${domainName}/not-reviewed`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotReviewedUrls(response.data);
+    } catch (error) {
+      setNotification({ message: 'Error fetching not reviewed URLs', type: 'error' });
+    }
+  };
+
+  const fetchReviewedUrls = async () => {
+    if (!domainName) {
+      setNotification({ message: 'Invalid domain name', type: 'error' });
+      return;
+    }
+    try {
+      const response = await axios.get(`${API_URL}/urls/${domainName}/reviewed`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setReviewedUrls(response.data);
+    } catch (error) {
+      setNotification({ message: 'Error fetching reviewed URLs', type: 'error' });
+    }
+  };
+
+  const handleReviewToggle = async (id, currentReviewStatus) => {
+    try {
+      const response = await axios.put(`${API_URL}/urls/${id}/review`, 
+        { reviewed: !currentReviewStatus }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const updatedUrl = response.data.updatedUrl;
+      
+      if (currentReviewStatus) {
+        setReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+        setNotReviewedUrls(prevUrls => [...prevUrls, updatedUrl]);
+      } else {
+        setNotReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+        setReviewedUrls(prevUrls => [...prevUrls, updatedUrl]);
+      }
+
+      setNotification({ message: 'URL review status updated successfully', type: 'success' });
+    } catch (error) {
+      console.error('Error updating URL review status:', error);
+      setNotification({ message: 'Error updating URL review status', type: 'error' });
+    }
+  };
+
+  const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this URL?')) {
+          try {
+            await axios.delete(`${API_URL}/urls/${id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            // URL'yi ilgili listeden kaldır
+            setNotReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+            setReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+            setNotification({ message: 'URL deleted successfully', type: 'success' });
+          } catch (error) {
+            setNotification({ message: 'Error deleting URL', type: 'error' });
+          }
+        }
+      };
+
+  const fetchExcelUrls = async () => {
+    try {
+      if (!token) {
+        setNotification({ message: 'Authentication token is missing. Please log in again.', type: 'error' });
+        return;
+      }
+  
+      const response = await axios.get(`${API_URL}/excel/content/${domainName}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
+      if (response.data && Array.isArray(response.data)) {
+        // Veritabanında olmayan URL'leri filtrele
+        const dbUrls = [...notReviewedUrls, ...reviewedUrls].map(u => u.url);
+        const newUrls = response.data.filter(url => !dbUrls.includes(url));
+        setExcelUrls(newUrls);
+      } else {
+        setNotification({ message: 'Unexpected response format from server', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error fetching Excel URLs:', error);
+      if (error.response && error.response.data && error.response.data.error) {
+        setNotification({ message: error.response.data.error, type: 'error' });
+      } else {
+        setNotification({ message: 'Error fetching Excel URLs', type: 'error' });
+      }
+    }
+  };
+
+  const handleAddSelectedUrls = async () => {
+    try {
+      const response = await axios.post(`${API_URL}/urls/add-urls/${domainName}`, 
+        { urls: selectedExcelUrls }, 
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      // Yeni eklenen URL'leri al
+      const newUrls = response.data.addedUrls;
+
+      // notReviewedUrls state'ini güncelle
+      setNotReviewedUrls(prevUrls => [...prevUrls, ...newUrls]);
+
+      // Excel listesini güncelle
+      setExcelUrls(prevUrls => prevUrls.filter(url => !selectedExcelUrls.includes(url)));
+
+      // Seçili URL'leri temizle
+      setSelectedExcelUrls([]);
+
+      setNotification({ message: 'Selected URLs added to database', type: 'success' });
+    } catch (error) {
+      setNotification({ message: 'Error adding URLs to database', type: 'error' });
+    }
+  };
+
+  const toggleExcelUrlSelection = (url) => {
+    setSelectedExcelUrls(prev => 
+      prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
+    );
+  };
+
+  const toggleAllExcelUrls = () => {
+    if (selectedExcelUrls.length === excelUrls.length) {
+      setSelectedExcelUrls([]);
+    } else {
+      setSelectedExcelUrls([...excelUrls]);
+    }
+  };
+
+  return (
+    <div className="container mx-auto mt-10 px-4">
+      <h1 className="text-2xl font-bold mb-6">{`URL Review for ${domainName || 'Unknown Domain'}`}</h1>
+
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
+      {domainName && (
+        <>
+          <button
+            className="text-blue-500 hover:text-blue-700 mb-4"
+            onClick={() => {
+              setShowExcelContent(!showExcelContent);
+              if (!showExcelContent) fetchExcelUrls();
+            }}
+          >
+            {showExcelContent ? 'Hide Excel Content' : 'Show Excel Content'}
+          </button>
+
+          {showExcelContent && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-2">Excel URLs (Not in Database)</h2>
+              <button
+                className="mb-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                onClick={toggleAllExcelUrls}
+              >
+                {selectedExcelUrls.length === excelUrls.length ? 'Deselect All' : 'Select All'}
+              </button>
+              <table className={tableClasses.table}>
+                <thead className={tableClasses.tableHeader}>
+                  <tr>
+                    <th className={tableClasses.tableHeaderCell}>Select</th>
+                    <th className={tableClasses.tableHeaderCell}>URL</th>
+                  </tr>
+                </thead>
+                <tbody className={tableClasses.tableBody}>
+                  {excelUrls.length > 0 ? excelUrls.map((url, index) => (
+                    <tr key={index} className={tableClasses.tableRow}>
+                      <td className={tableClasses.tableCell}>
+                        <input
+                          type="checkbox"
+                          checked={selectedExcelUrls.includes(url)}
+                          onChange={() => toggleExcelUrlSelection(url)}
+                        />
+                      </td>
+                      <td className={tableClasses.tableCell}>{url}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan="2" className="text-center py-4">No new URLs found in Excel</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              {excelUrls.length > 0 && (
+                <button
+                  className="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                  onClick={handleAddSelectedUrls}
+                >
+                  Add Selected URLs
+                </button>
+              )}
+            </div>
+          )}
+
+          <h2 className="text-lg font-semibold mb-2">Not Reviewed Pages</h2>
+          <table className={tableClasses.table}>
+            <thead className={tableClasses.tableHeader}>
+              <tr>
+                <th className={tableClasses.tableHeaderCell}>DONE</th>
+                <th className={tableClasses.tableHeaderCell}>SEMRUSH</th>
+                <th className={tableClasses.tableHeaderCell}>URL</th>
+                <th className={tableClasses.tableHeaderCell}>DELETE</th>
+              </tr>
+            </thead>
+            <tbody className={tableClasses.tableBody}>
+              {notReviewedUrls.length > 0 ? notReviewedUrls.map((url) => (
+                <tr key={url.id} className={tableClasses.tableRow}>
+                  <td className={tableClasses.tableCell}>
+                    <button onClick={() => handleReviewToggle(url.id, false)} className="text-gray-500 hover:text-green-500">
+                      <CheckSquare />
+                    </button>
+                  </td>
+                  <td className={tableClasses.tableCell}>
+                    <BarChart2 />
+                  </td>
+                  <td className={tableClasses.tableCell}>{url.url}</td>
+                  <td className={tableClasses.tableCell}>
+                    <button onClick={() => handleDelete(url.id)} className={tableClasses.deleteIcon}>
+                      <Trash2 />
+                    </button>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="4" className="text-center py-4">No more URLs available</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          <h2 className="text-lg font-semibold mb-2 mt-4">Reviewed Pages</h2>
+          <button
+            className="text-blue-500 hover:text-blue-700 mb-2"
+            onClick={() => setShowReviewed(!showReviewed)}
+          >
+            {showReviewed ? 'Hide Reviewed' : 'Show Reviewed'}
+          </button>
+
+          {showReviewed && (
+            <table className={tableClasses.table}>
+              <thead className={tableClasses.tableHeader}>
+                <tr>
+                  <th className={tableClasses.tableHeaderCell}>DONE</th>
+                  <th className={tableClasses.tableHeaderCell}>SEMRUSH</th>
+                  <th className={tableClasses.tableHeaderCell}>URL</th>
+                  <th className={tableClasses.tableHeaderCell}>DELETE</th>
+                </tr>
+              </thead>
+              <tbody className={tableClasses.tableBody}>
+                {reviewedUrls.length > 0 ? reviewedUrls.map((url) => (
+                  <tr key={url.id} className={tableClasses.tableRow}>
+                    <td className={tableClasses.tableCell}>
+                      <button onClick={() => handleReviewToggle(url.id, true)} className="text-green-500 hover:text-gray-500">
+                        <Check />
+                      </button>
+                    </td>
+                    <td className={tableClasses.tableCell}>
+                      <BarChart2 />
+                    </td>
+                    <td className={tableClasses.tableCell}>{url.url}</td>
+                    <td className={tableClasses.tableCell}>
+                      <button onClick={() => handleDelete(url.id)} className={tableClasses.deleteIcon}>
+                        <Trash2 />
+                      </button>
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4">No reviewed URLs available</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+export default UrlReview;
