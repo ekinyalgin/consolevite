@@ -85,12 +85,25 @@ const TodoPage = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/sites/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   useEffect(() => {
     if (!loading) {
       if (!user) {
         navigate('/login');
       } else {
         fetchTodos();
+        fetchCategories();
       }
     }
   }, [user, loading, navigate]);

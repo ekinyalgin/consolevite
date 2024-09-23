@@ -96,17 +96,13 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, categor
                                     ))}
                                 </td>
                                 <td className={tableClasses.tableCell}>
-                                    {categories.includes(todo.title) && (
-                                        <div>
-                                            {getRandomDomains(todo.title).map((domain, index) => (
-                                                <div key={index} className="flex items-center">
-                                                    <span>{domain}</span>
-                                                    <ArrowRight className="ml-2" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                {categories.some(category => category.name === todo.title) && (
+								<ArrowRight className="text-blue-500" />
+							)}
                                 </td>
+                                
+							
+						
                                 <td className={tableClasses.tableCell}>
                                     <button onClick={() => onEdit(todo)} className={tableClasses.iconButton}>
                                         <Edit />
