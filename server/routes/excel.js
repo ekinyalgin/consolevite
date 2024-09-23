@@ -9,5 +9,6 @@ router.get('/check-excel/:domainName', authorize, excelController.checkExcelFile
 router.get('/content/:domainName', authorize, isAdmin, excelController.getExcelContent);
 router.get('/download/:domainName', excelController.downloadExcel);
 router.post('/download-multiple', authorize, isAdmin, excelController.bulkDownloadReports);
+router.delete('/delete/:domainName', authorize, isAdmin, excelController.deleteExcelFile); // New route for deleting Excel file
 
 module.exports = router;

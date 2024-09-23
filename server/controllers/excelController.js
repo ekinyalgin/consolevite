@@ -131,3 +131,19 @@ exports.bulkDownloadReports = async (req, res) => {
 	  res.status(500).json({ error: 'Error during bulk download' });
 	}
   };
+
+exports.deleteExcelFile = async (req, res) => {
+  const { domainName } = req.params;
+  try {
+    const filePath = path.join(process.cwd(), 'public', 'site', 'tmp', `${domainName}.xlsx`);
+    if (fs.existsSync(filePath)) {
+      await fs.promises.unlink(filePath);
+      res.json({ message: 'Excel file deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Excel file not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting Excel file:', error);
+    res.status(500).json({ error: 'Error deleting Excel file' });
+  }
+};

@@ -95,20 +95,20 @@ const UrlReview = () => {
   };
 
   const handleDelete = async (id) => {
-        if (window.confirm('Are you sure you want to delete this URL?')) {
-          try {
-            await axios.delete(`${API_URL}/urls/${id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            // URL'yi ilgili listeden kaldır
-            setNotReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
-            setReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
-            setNotification({ message: 'URL deleted successfully', type: 'success' });
-          } catch (error) {
-            setNotification({ message: 'Error deleting URL', type: 'error' });
-          }
-        }
-      };
+    if (window.confirm('Are you sure you want to delete this URL?')) {
+      try {
+        await axios.delete(`${API_URL}/urls/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // URL'yi ilgili listeden kaldır
+        setNotReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+        setReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+        setNotification({ message: 'URL deleted successfully', type: 'success' });
+      } catch (error) {
+        setNotification({ message: 'Error deleting URL', type: 'error' });
+      }
+    }
+  };
 
   const fetchExcelUrls = async () => {
     try {
@@ -166,6 +166,36 @@ const UrlReview = () => {
     }
   };
 
+  const handleAddAllUrls = async () => {
+    try {
+      // Add all URLs to the database
+      const response = await axios.post(`${API_URL}/urls/add-urls/${domainName}`, 
+        { urls: excelUrls }, 
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      // Yeni eklenen URL'leri al
+      const newUrls = response.data.addedUrls;
+
+      // notReviewedUrls state'ini güncelle
+      setNotReviewedUrls(prevUrls => [...prevUrls, ...newUrls]);
+
+      // Excel listesini temizle
+      setExcelUrls([]);
+
+      // Excel dosyasını sil
+      await axios.delete(`${API_URL}/excel/delete/${domainName}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setNotification({ message: 'All URLs added to database and Excel file deleted', type: 'success' });
+    } catch (error) {
+      setNotification({ message: 'Error adding URLs to database or deleting Excel file', type: 'error' });
+    }
+  };
+
   const toggleExcelUrlSelection = (url) => {
     setSelectedExcelUrls(prev => 
       prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
@@ -212,6 +242,12 @@ const UrlReview = () => {
                 onClick={toggleAllExcelUrls}
               >
                 {selectedExcelUrls.length === excelUrls.length ? 'Deselect All' : 'Select All'}
+              </button>
+              <button
+                className="mb-2 ml-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                onClick={handleAddAllUrls}
+              >
+                Select All and Add to Database
               </button>
               <table className={tableClasses.table}>
                 <thead className={tableClasses.tableHeader}>
