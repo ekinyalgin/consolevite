@@ -9,6 +9,8 @@ exports.getAllSites = async (req, res) => {
         s.monthly_visitors, 
         s.created_at, 
         s.updated_at,
+        (SELECT COUNT(*) FROM urls u WHERE u.domain_name = s.domain_name AND u.reviewed = 0) AS not_reviewed_pages,
+        (SELECT COUNT(*) FROM urls u WHERE u.domain_name = s.domain_name AND u.reviewed = 1) AS reviewed_pages,
         l.id AS language_id,
         l.name AS language,
         c.id AS category_id,

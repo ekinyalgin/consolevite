@@ -159,7 +159,7 @@ exports.addUrlsFromExcel = async (req, res) => {
     }
 
     // Update the site's not_reviewed_pages count
-    await pool.query('UPDATE sites SET not_reviewed_pages = not_reviewed_pages + ? WHERE domain_name = ?', [urls.length, domainName]);
+    //await pool.query('UPDATE sites SET not_reviewed_pages = not_reviewed_pages + ? WHERE domain_name = ?', [urls.length, domainName]);
 
     res.json({ message: 'URLs added successfully', addedUrls });
   } catch (err) {

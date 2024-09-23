@@ -20,7 +20,7 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, notRevi
 
     const getDomainsWithNotReviewed = (todoTitle) => {
         return sites
-            .filter(site => site.category === todoTitle)
+            .filter(site => site.category === todoTitle && site.not_reviewed_pages > 0)
             .map(site => site.domain_name);
     };
 
