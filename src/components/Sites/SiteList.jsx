@@ -214,9 +214,13 @@ const SiteList = ({ onNotification }) => {
               headers: { Authorization: `Bearer ${token}` },
             }
           );
+          // Delete the Excel file after adding URLs
+          await axios.delete(`${API_URL}/excel/delete/${site.domain_name}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
         }
       }
-      onNotification('New URLs from Excel files added to the database', 'success');
+      onNotification('New URLs from Excel files added to the database and Excel files deleted', 'success');
       fetchSitesByCategory(activeCategory); // Refresh the site list
     } catch (error) {
       console.error('Error adding new URLs from Excel files to the database:', error);
