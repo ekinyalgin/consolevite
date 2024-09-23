@@ -1,12 +1,12 @@
 // components/Todo/TodoList.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Edit, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { Edit, Trash2, CheckCircle, XCircle, Plus, ExternalLink, ArrowRight } from 'lucide-react';
 import tableClasses from '../../utils/tableClasses';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { formatDateForDisplay } from './dateUtils';
 
-const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange }) => {
+const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, categories, notReviewedUrls }) => {
         const [expandedRows, setExpandedRows] = useState([]);
         const [editingDate, setEditingDate] = useState(null);
         const datePickerRefs = useRef({});
@@ -27,6 +27,12 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange }) => {
             setEditingDate(id);
         };
 
+        const getRandomDomains = (category) => {
+            const filteredUrls = notReviewedUrls.filter(url => url.category === category);
+            const randomUrls = filteredUrls.sort(() => 0.5 - Math.random()).slice(0, 5);
+            return randomUrls.map(url => url.domain_name);
+        };
+
         return (
             <table className={tableClasses.table}>
                 <thead>
@@ -35,6 +41,8 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange }) => {
                         <th className={tableClasses.tableHeaderCell}>Title</th>
                         <th className={tableClasses.tableHeaderCell}>Note</th>
                         <th className={tableClasses.tableHeaderCell}>Date</th>
+                        <th className={tableClasses.tableHeaderCell}>Links</th>
+                        <th className={tableClasses.tableHeaderCell}>Blog</th>
                         <th className={tableClasses.tableHeaderCell}>Actions</th>
                     </tr>
                 </thead>
@@ -76,6 +84,30 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange }) => {
                                     )}
                                 </td>
                                 <td className={tableClasses.tableCell}>
+                                    {todo.links && todo.links.map((link, index) => (
+                                        <a 
+                                            key={index} 
+                                            href={link.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="mr-2"
+                                            dangerouslySetInnerHTML={{ __html: link.icon }}
+                                        />
+                                    ))}
+                                </td>
+                                <td className={tableClasses.tableCell}>
+                                    {categories.includes(todo.title) && (
+                                        <div>
+                                            {getRandomDomains(todo.title).map((domain, index) => (
+                                                <div key={index} className="flex items-center">
+                                                    <span>{domain}</span>
+                                                    <ArrowRight className="ml-2" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </td>
+                                <td className={tableClasses.tableCell}>
                                     <button onClick={() => onEdit(todo)} className={tableClasses.iconButton}>
                                         <Edit />
                                     </button>
@@ -86,7 +118,7 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange }) => {
                             </tr>
                             {expandedRows.includes(todo.id) && (
                                 <tr>
-                                    <td colSpan="5" className={tableClasses.tableCellExpanded}>
+                                    <td colSpan="7" className={tableClasses.tableCellExpanded}>
                                         {todo.note}
                                     </td>
                                 </tr>

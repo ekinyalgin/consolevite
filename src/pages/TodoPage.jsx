@@ -6,9 +6,9 @@ import TodoList from '../components/Todos/TodoList';
 import Notification from '../utils/Notification';
 import { AuthContext } from '../contexts/AuthContext';
 import axios from 'axios';
-import DatePicker from 'react-datepicker'; // Add this import
-import 'react-datepicker/dist/react-datepicker.css'; // Add this import
-import { formatDate, getNextDay } from '../components/Todos/dateUtils'; // Add this import
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { formatDate, getNextDay } from '../components/Todos/dateUtils';
 
 const TodoPage = () => {
   const { user, loading } = useContext(AuthContext);
@@ -18,6 +18,8 @@ const TodoPage = () => {
   const [selectedTodo, setSelectedTodo] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [notReviewedUrls, setNotReviewedUrls] = useState([]);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -93,7 +95,6 @@ const TodoPage = () => {
     }
   }, [user, loading, navigate]);
 
-
   const handleToggleDone = async (id, currentDate) => {
     try {
       let nextDate;
@@ -149,7 +150,6 @@ const TodoPage = () => {
     }
   };
 
-  // Todo ekleme veya güncelleme sırasında handleSave fonksiyonunda
   const handleSave = async (todoData) => {
     try {
       const token = localStorage.getItem('token');
@@ -161,7 +161,6 @@ const TodoPage = () => {
       }
 
       if (todoData.id) {
-        // Update existing todo
         response = await axios.put(`${API_URL}/todos/${todoData.id}`, todoData, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -169,7 +168,6 @@ const TodoPage = () => {
           todo.id === todoData.id ? response.data : todo
         ));
       } else {
-        // Create new todo
         response = await axios.post(`${API_URL}/todos`, todoData, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -238,6 +236,8 @@ const TodoPage = () => {
             onToggleDone={handleToggleDone}
             onDateChange={handleDateChange}
             onDelete={handleDelete}
+            categories={categories}
+            notReviewedUrls={notReviewedUrls}
           />
         </div>
       ))}
