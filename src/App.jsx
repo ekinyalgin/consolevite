@@ -11,7 +11,7 @@ import UrlReview from './components/Sites/UrlReview';
 
 const App = () => {
   return (
-    <Router>
+    <Router basename="/console"> 
     <AuthProvider>
       <Routes>
         <Route path="/" element={<Layout />}>

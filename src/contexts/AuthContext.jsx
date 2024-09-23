@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Token'ları URL'den alıp localStorage'a kaydetmek ve kullanıcıyı yönlendirmek
+  // Mevcut tokenları kontrol etme
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Query parametrelerinden token alımı ve yönlendirme
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const token = queryParams.get("token");
@@ -58,8 +59,10 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("refreshToken", refreshToken);
 
       // Kullanıcı bilgilerini al ve ardından anasayfaya yönlendir
-      getUser(token); // Kullanıcı bilgilerini doğrula
-      navigate("/"); // Yönlendirme yap
+      getUser(token);
+
+      // URL'deki query parametrelerini temizle
+      navigate("/", { replace: true });
     }
   }, [navigate]);
 
