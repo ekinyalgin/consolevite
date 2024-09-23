@@ -39,6 +39,10 @@ exports.getUrlsStatusForDomain = async (req, res) => {
 		const [result] = await pool.query('INSERT INTO urls (url, domain_name, reviewed) VALUES (?, ?, false)', [url, domainName]);
 		addedUrls.push({ id: result.insertId, url, domain_name: domainName, reviewed: false });
 	  }
+
+	  // Update the site's not_reviewed_pages count
+	  await pool.query('UPDATE sites SET not_reviewed_pages = not_reviewed_pages + ? WHERE domain_name = ?', [urls.length, domainName]);
+
 	  res.json({ message: 'URLs added successfully', addedUrls });
 	} catch (err) {
 	  console.error(err);
@@ -50,7 +54,20 @@ exports.markUrlAsReviewed = async (req, res) => {
   const { id } = req.params;
   const { reviewed } = req.body;
   try {
+    const [[url]] = await pool.query('SELECT * FROM urls WHERE id = ?', [id]);
+
+    if (!url) {
+      return res.status(404).json({ error: 'URL not found' });
+    }
+
     await pool.query('UPDATE urls SET reviewed = ? WHERE id = ?', [reviewed, id]);
+
+    if (reviewed) {
+      await pool.query('UPDATE sites SET not_reviewed_pages = not_reviewed_pages - 1, reviewed_pages = reviewed_pages + 1 WHERE domain_name = ?', [url.domain_name]);
+    } else {
+      await pool.query('UPDATE sites SET not_reviewed_pages = not_reviewed_pages + 1, reviewed_pages = reviewed_pages - 1 WHERE domain_name = ?', [url.domain_name]);
+    }
+
     const [[updatedUrl]] = await pool.query('SELECT * FROM urls WHERE id = ?', [id]);
     res.json({ message: `URL marked as ${reviewed ? 'reviewed' : 'not reviewed'}`, updatedUrl });
   } catch (err) {
@@ -62,11 +79,27 @@ exports.markUrlAsReviewed = async (req, res) => {
 exports.deleteUrl = async (req, res) => {
   const { id } = req.params;
   try {
+    // Get the URL details before deleting
+    const [[url]] = await pool.query('SELECT * FROM urls WHERE id = ?', [id]);
+
+    if (!url) {
+      return res.status(404).json({ error: 'URL not found' });
+    }
+
+    // Delete the URL from the database
     await pool.query('DELETE FROM urls WHERE id = ?', [id]);
-    res.json({ message: 'URL deleted successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+
+    // Update the site's not_reviewed_pages or reviewed_pages count
+    if (url.reviewed === 0) {
+      await pool.query('UPDATE sites SET not_reviewed_pages = not_reviewed_pages - 1 WHERE domain_name = ?', [url.domain_name]);
+    } else {
+      await pool.query('UPDATE sites SET reviewed_pages = reviewed_pages - 1 WHERE domain_name = ?', [url.domain_name]);
+    }
+
+    res.status(200).json({ message: 'URL deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete URL' });
   }
 };
 

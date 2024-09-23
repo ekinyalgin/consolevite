@@ -284,6 +284,8 @@ const SiteList = ({ onNotification }) => {
             <th className={tableClasses.tableHeaderCell}>Domain Name</th>
             <th className={tableClasses.tableHeaderCell}>Monthly Visitors</th>
             <th className={tableClasses.tableHeaderCell}>Language</th>
+            <th className={tableClasses.tableHeaderCell}>Not Reviewed Pages</th>
+            <th className={tableClasses.tableHeaderCell}>Reviewed Pages</th>
             <th className={tableClasses.tableHeaderCell}>Actions</th>
           </tr>
         </thead>
@@ -300,6 +302,8 @@ const SiteList = ({ onNotification }) => {
               <td className={tableClasses.tableCell}>{site.domain_name}</td>
               <td className={tableClasses.tableCell}>{site.monthly_visitors}</td>
               <td className={tableClasses.tableCell}>{site.language}</td>
+              <td className={tableClasses.tableCell}>{site.not_reviewed_pages}</td>
+              <td className={tableClasses.tableCell}>{site.reviewed_pages}</td>
               <td className={tableClasses.tableCell}>
                 <div className={tableClasses.actionContainer}>
                   {site.hasNotReviewed && (
@@ -307,11 +311,11 @@ const SiteList = ({ onNotification }) => {
                       <Eye />
                     </Link>
                   )}
-                  {site.hasExcelFile && (
+                  
                     <button className={tableClasses.downloadIcon} onClick={() => handleDownload(site.domain_name, site.language, site.monthly_visitors)}>
                       <Download />
                     </button>
-                  )}
+                  
                   {site.hasExcelFile && (
                     <button className={tableClasses.excelIcon}>
                       <FileText />
@@ -329,7 +333,7 @@ const SiteList = ({ onNotification }) => {
           ))}
           {sites.length === 0 && (
             <tr>
-              <td colSpan="5" className="text-center py-4">
+              <td colSpan="7" className="text-center py-4">
                 No sites available for this category
               </td>
             </tr>
@@ -359,6 +363,5 @@ const SiteList = ({ onNotification }) => {
     </div>
   );
 };
-
 
 export default SiteList;

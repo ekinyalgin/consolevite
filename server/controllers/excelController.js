@@ -147,3 +147,23 @@ exports.deleteExcelFile = async (req, res) => {
     res.status(500).json({ error: 'Error deleting Excel file' });
   }
 };
+
+exports.addUrlsFromExcel = async (req, res) => {
+  const { domainName } = req.params;
+  const { urls } = req.body;
+  try {
+    const addedUrls = [];
+    for (let url of urls) {
+      const [result] = await pool.query('INSERT INTO urls (url, domain_name, reviewed) VALUES (?, ?, false)', [url, domainName]);
+      addedUrls.push({ id: result.insertId, url, domain_name: domainName, reviewed: false });
+    }
+
+    // Update the site's not_reviewed_pages count
+    await pool.query('UPDATE sites SET not_reviewed_pages = not_reviewed_pages + ? WHERE domain_name = ?', [urls.length, domainName]);
+
+    res.json({ message: 'URLs added successfully', addedUrls });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
