@@ -164,7 +164,7 @@ const SiteList = ({ onNotification }) => {
 
   const handleAddClick = () => {
     setEditingSite(null);
-    setShowForm(true);
+    setShowForm(!showForm); // Toggle the form
   };
 
   const handleEditClick = (site) => {
@@ -231,7 +231,7 @@ const SiteList = ({ onNotification }) => {
   return (
     <div>
       <button onClick={handleAddClick} className="mb-4 bg-blue-500 text-white px-4 py-2 rounded">
-        Add Site
+        {showForm ? 'Close Form' : 'Add Site'}
       </button>
 
       {showForm && (
@@ -239,7 +239,7 @@ const SiteList = ({ onNotification }) => {
           onSubmit={handleSiteSubmit}
           onCancel={() => setShowForm(false)}
           initialData={editingSite}
-          onNotification={onNotification}  // Bu satırı ekleyin
+          onNotification={onNotification}
         />
       )}
 
@@ -359,5 +359,6 @@ const SiteList = ({ onNotification }) => {
     </div>
   );
 };
+
 
 export default SiteList;
