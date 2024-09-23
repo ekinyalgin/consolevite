@@ -66,6 +66,18 @@ const SiteList = ({ onNotification }) => {
     }
   };
 
+  const fetchExcelUrls = async (domainName) => {
+    try {
+      const response = await axios.get(`${API_URL}/excel/content/${domainName}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Excel URLs:', error);
+      return [];
+    }
+  };
+
   const fetchSitesByCategory = async (category) => {
     try {
       const response = await axios.get(`${API_URL}/sites`, {
@@ -182,6 +194,33 @@ const SiteList = ({ onNotification }) => {
     } catch (error) {
       console.error('Error saving site:', error);
       onNotification(`Error saving site: ${error.response?.data?.error || error.message}`, 'error');
+    }
+  };
+
+  const handleAddAllNewUrls = async () => {
+    try {
+      const sitesWithExcel = sites.filter(site => site.hasExcelFile);
+      for (const site of sitesWithExcel) {
+        const excelUrls = await fetchExcelUrls(site.domain_name);
+        const dbUrlsResponse = await axios.get(`${API_URL}/urls/${site.domain_name}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const dbUrls = [...dbUrlsResponse.data.notReviewed, ...dbUrlsResponse.data.reviewed].map(url => url.url);
+        const newUrls = excelUrls.filter(url => !dbUrls.includes(url));
+        if (newUrls.length > 0) {
+          await axios.post(`${API_URL}/urls/add-urls/${site.domain_name}`, 
+            { urls: newUrls }, 
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+        }
+      }
+      onNotification('New URLs from Excel files added to the database', 'success');
+      fetchSitesByCategory(activeCategory); // Refresh the site list
+    } catch (error) {
+      console.error('Error adding new URLs from Excel files to the database:', error);
+      onNotification('Error adding new URLs from Excel files to the database', 'error');
     }
   };
 
@@ -303,9 +342,18 @@ const SiteList = ({ onNotification }) => {
           Download Report
         </button>
       </div>
+
+      {/* Add All New URLs Button */}
+      <div className="mt-4">
+        <button 
+          onClick={handleAddAllNewUrls}
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        >
+          Add All New URLs from Excel Files
+        </button>
+      </div>
     </div>
   );
 };
-
 
 export default SiteList;

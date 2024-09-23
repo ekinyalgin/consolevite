@@ -10,7 +10,7 @@ async function downloadReport({ domainName, language, monthlyVisitors, onProgres
     };
 
     logMessage(`Starting download for domain: ${domainName}`);
-    const browser = await chromium.launch({ headless: false });
+    const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ acceptDownloads: true });
     const page = await context.newPage();
 
