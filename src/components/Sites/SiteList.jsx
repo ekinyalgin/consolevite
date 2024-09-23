@@ -3,7 +3,7 @@ import axios from 'axios';
 import BulkUpdateVisitors from './BulkUpdateVisitors'; 
 import SiteForm from './SiteForm';
 import tableClasses from '../../utils/tableClasses';
-import { CheckSquare, Eye, Download, Edit, Trash2, Settings } from 'lucide-react';
+import { CheckSquare, Eye, Download, Edit, Trash2, Settings, FileText } from 'lucide-react'; // Import FileText icon
 import { Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -56,15 +56,15 @@ const SiteList = ({ onNotification }) => {
   };
 
   const handleDownload = async (domainName, language, monthlyVisitors) => {
-        try {
-          const response = await axios.get(`${API_URL}/excel/download/${domainName}`, {
-            params: { language, monthlyVisitors },
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        } catch (error) {
-          onNotification('Error while downloading the file', 'error');
-        }
-      };
+    try {
+      const response = await axios.get(`${API_URL}/excel/download/${domainName}`, {
+        params: { language, monthlyVisitors },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      onNotification('Error while downloading the file', 'error');
+    }
+  };
 
   const fetchSitesByCategory = async (category) => {
     try {
@@ -269,6 +269,11 @@ const SiteList = ({ onNotification }) => {
                       <Download />
                     </button>
                   )}
+                  {site.hasExcelFile && (
+                    <button className={tableClasses.excelIcon}>
+                      <FileText />
+                    </button>
+                  )}
                   <button className={tableClasses.editIcon} onClick={() => handleEditClick(site)}>
                     <Edit />
                   </button>
@@ -301,5 +306,6 @@ const SiteList = ({ onNotification }) => {
     </div>
   );
 };
+
 
 export default SiteList;
