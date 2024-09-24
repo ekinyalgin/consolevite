@@ -3,7 +3,8 @@ const passport = require("passport");
 const jwt = require('jsonwebtoken');
 const authController = require('../controllers/authController'); // authController.js dosyasını içe aktar
 
-const CLIENT_URL = process.env.VITE_CLIENT_URL;
+// Ensure CLIENT_URL is correctly accessed from environment variables
+const CLIENT_URL = process.env.CLIENT_URL;
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
@@ -61,5 +62,7 @@ router.post("/refresh-token", (req, res) => {
     res.status(403).json({ message: "Invalid refresh token" });
   }
 });
+
+console.log("CLIENT_URL:", CLIENT_URL);
 
 module.exports = router;

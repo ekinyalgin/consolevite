@@ -30,7 +30,6 @@ app.use((req, res, next) => {
     "http://localhost:3000",
     "https://www.ekinyalgin.com",
     "https://ekinyalgin.com",
-    "https://www.ekinyalgin.com/console",
   ];
   const origin = req.headers.origin;
 
