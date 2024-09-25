@@ -4,10 +4,11 @@ import axios from 'axios';
 import tableClasses from '../../utils/tableClasses';
 import LanguagePopup from './LanguagePopup';
 import CategoryPopup from './CategoryPopup';
+import { XCircle, Plus } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {  // onNotification prop'unu ekleyin
+const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {
   const [formData, setFormData] = useState({
     domainName: '',
     monthlyVisitors: '',
@@ -28,11 +29,13 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {  // 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        domainName: initialData.domain_name,
-        monthlyVisitors: initialData.monthly_visitors,
-        language: initialData.language,
-        category: initialData.category,
+        domainName: initialData.domain_name || '',
+        monthlyVisitors: initialData.monthly_visitors || '',
+        language: initialData.language || '',
+        category: initialData.category || '',
       });
+    } else {
+      resetForm();
     }
   }, [initialData]);
 
@@ -66,7 +69,7 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {  // 
   const handleSubmit = (e) => {
     e.preventDefault();
     const submittedData = {
-      id: initialData?.id, // Eğer güncelleme ise, id'yi ekleyin
+      id: initialData?.id,
       domain_name: formData.domainName,
       monthly_visitors: parseInt(formData.monthlyVisitors, 10),
       language: formData.language,
@@ -75,37 +78,42 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {  // 
     onSubmit(submittedData);
   };
 
+  const resetForm = () => {
+    setFormData({
+      domainName: '',
+      monthlyVisitors: '',
+      language: '',
+      category: ''
+    });
+    onCancel();
+  };
+
   return (
-    <form onSubmit={handleSubmit} className={tableClasses.formContainer}>
-      <div className="mb-4">
-        <label className={tableClasses.formLabel}>Domain Name</label>
-        <input
-          type="text"
-          name="domainName"
-          value={formData.domainName}
-          onChange={handleInputChange}
-          className={tableClasses.formInput}
-          required
-        />
-      </div>
-      <div className="mb-4">
-        <label className={tableClasses.formLabel}>Monthly Visitors</label>
-        <input
-          type="number"
-          name="monthlyVisitors"
-          value={formData.monthlyVisitors}
-          onChange={handleInputChange}
-          className={tableClasses.formInput}
-          required
-        />
-      </div>
-      <div className="mb-4 flex items-center">
-        <label className={tableClasses.formLabel}>Language</label>
+    <form onSubmit={handleSubmit} className={tableClasses.formContainer + " space-y-4"}>
+      <input
+        type="text"
+        name="domainName"
+        value={formData.domainName}
+        onChange={handleInputChange}
+        className={`${tableClasses.formInput} w-full`}
+        placeholder="Domain Name"
+        required
+      />
+      <input
+        type="number"
+        name="monthlyVisitors"
+        value={formData.monthlyVisitors}
+        onChange={handleInputChange}
+        className={`${tableClasses.formInput} w-full`}
+        placeholder="Monthly Visitors"
+        required
+      />
+      <div className="flex items-center space-x-2">
         <select
           name="language"
           value={formData.language}
           onChange={handleInputChange}
-          className={tableClasses.formInput}
+          className={`${tableClasses.formInput} w-3/4`}
           required
         >
           <option value="">Select Language</option>
@@ -113,17 +121,20 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {  // 
             <option key={lang.id} value={lang.name}>{lang.name}</option>
           ))}
         </select>
-        <button type="button" onClick={() => setShowLanguagePopup(true)} className={`${tableClasses.addButton} ml-2`}>
-          Add Language
+        <button 
+          type="button" 
+          onClick={() => setShowLanguagePopup(true)} 
+          className={`${tableClasses.addButton} w-1/4 flex items-center justify-center`}
+        >
+          <Plus className="w-4 h-4" />
         </button>
       </div>
-      <div className="mb-4 flex items-center">
-        <label className={tableClasses.formLabel}>Category</label>
+      <div className="flex items-center space-x-2">
         <select
           name="category"
           value={formData.category}
           onChange={handleInputChange}
-          className={tableClasses.formInput}
+          className={`${tableClasses.formInput} w-3/4`}
           required
         >
           <option value="">Select Category</option>
@@ -131,34 +142,45 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {  // 
             <option key={cat.id} value={cat.name}>{cat.name}</option>
           ))}
         </select>
-        <button type="button" onClick={() => setShowCategoryPopup(true)} className={`${tableClasses.addButton} ml-2`}>
-          Add Category
+        <button 
+          type="button" 
+          onClick={() => setShowCategoryPopup(true)} 
+          className={`${tableClasses.addButton} w-1/4 flex items-center justify-center`}
+        >
+          <Plus className="w-4 h-4" />
         </button>
       </div>
-      <div className="flex space-x-4">
-        <button type="submit" className={tableClasses.formButton}>
+      <div className="flex space-x-2">
+        <button
+          type="submit"
+          className={`${tableClasses.formButton} ${initialData ? 'w-4/6' : 'w-full'}`}
+        >
           {initialData ? 'Update' : 'Add'} Site
         </button>
-        <button type="button" onClick={onCancel} className={tableClasses.cancelButton}>
-          Cancel
-        </button>
+        {initialData && (
+          <button
+            type="button"
+            onClick={resetForm}
+            className={`${tableClasses.formButton} w-2/6 flex items-center justify-center`}
+          >
+            <XCircle className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      {/* Language Popup */}
       {showLanguagePopup && (
         <LanguagePopup
           onClose={() => setShowLanguagePopup(false)}
           onNotification={onNotification}
-          onLanguageChange={fetchLanguages} // Yeni dil eklendiğinde verileri yenile
+          onLanguageChange={fetchLanguages}
         />
       )}
 
-      {/* Category Popup */}
       {showCategoryPopup && (
         <CategoryPopup
           onClose={() => setShowCategoryPopup(false)}
           onNotification={onNotification}
-          onCategoryChange={fetchCategories} // Yeni kategori eklendiğinde verileri yenile
+          onCategoryChange={fetchCategories}
         />
       )}
     </form>

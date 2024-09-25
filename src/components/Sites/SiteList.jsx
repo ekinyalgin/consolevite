@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import BulkUpdateVisitors from './BulkUpdateVisitors'; 
-import SiteForm from './SiteForm';
 import tableClasses from '../../utils/tableClasses';
-import { CheckSquare, Eye, Download, Edit, Trash2, Settings, FileText } from 'lucide-react'; // Import FileText icon
+import { CheckSquare, Eye, Download, Edit, Trash2, Settings, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const SiteList = ({ onNotification }) => {
+const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
   const [sites, setSites] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(localStorage.getItem('activeCategory') || null);
@@ -28,7 +27,7 @@ const SiteList = ({ onNotification }) => {
     if (activeCategory) {
       fetchSitesByCategory(activeCategory);
     }
-  }, [activeCategory]);
+  }, [activeCategory, refreshKey]);
 
   const fetchCategories = async () => {
     try {
@@ -162,39 +161,8 @@ const SiteList = ({ onNotification }) => {
     }
   };
 
-  const handleAddClick = () => {
-    setEditingSite(null);
-    setShowForm(!showForm); // Toggle the form
-  };
-
   const handleEditClick = (site) => {
-    setEditingSite(site);
-    setShowForm(true);
-  };
-
-  const handleSiteSubmit = async (siteData) => {
-    try {
-      if (siteData.id) {
-        // Güncelleme işlemi
-        const response = await axios.put(`${API_URL}/sites/${siteData.id}`, siteData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setSites(prevSites => prevSites.map(site => site.id === siteData.id ? { ...site, ...response.data } : site));
-        onNotification('Site updated successfully', 'success');
-      } else {
-        // Ekleme işlemi
-        const response = await axios.post(`${API_URL}/sites`, siteData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setSites(prevSites => [...prevSites, response.data]);
-        onNotification('Site added successfully', 'success');
-      }
-      setShowForm(false);
-      setEditingSite(null);
-    } catch (error) {
-      console.error('Error saving site:', error);
-      onNotification(`Error saving site: ${error.response?.data?.error || error.message}`, 'error');
-    }
+    onEditSite(site);
   };
 
   const handleAddAllNewUrls = async () => {
@@ -230,19 +198,6 @@ const SiteList = ({ onNotification }) => {
 
   return (
     <div>
-      <button onClick={handleAddClick} className="mb-4 bg-blue-500 text-white px-4 py-2 rounded">
-        {showForm ? 'Close Form' : 'Add Site'}
-      </button>
-
-      {showForm && (
-        <SiteForm
-          onSubmit={handleSiteSubmit}
-          onCancel={() => setShowForm(false)}
-          initialData={editingSite}
-          onNotification={onNotification}
-        />
-      )}
-
       <div className="mb-4 border-b border-gray-200 flex justify-between">
         <ul className="flex flex-wrap -mb-px">
           {categories.map((category) => (
@@ -281,11 +236,11 @@ const SiteList = ({ onNotification }) => {
         <thead className={tableClasses.tableHeaderRow}>
         <tr>
             <th className={tableClasses.tableHeader + " w-1/12"}>Check</th>
-            <th className={tableClasses.tableHeader + " w-5/12 text-left px-2"}>Domain Name</th>
+            <th className={tableClasses.tableHeader + " w-3/12 text-left px-2"}>Domain Name</th>
             <th className={tableClasses.tableHeader + " w-2/12"}>Monthly</th>
-            <th className={tableClasses.tableHeader + " w-1/12"}>Language</th>
+            <th className={tableClasses.tableHeader + " w-2/12"}>Language</th>
             <th className={tableClasses.tableHeader + " w-2/12"}>Download</th>
-            <th className={tableClasses.tableHeader + " w-1/12"}>Actions</th>
+            <th className={tableClasses.tableHeader + " w-2/12"}>Actions</th>
           </tr>
         </thead>
         <tbody className={tableClasses.tableBody}>
