@@ -1,6 +1,5 @@
-// components/Todo/TodoForm.jsx
 import React, { useEffect, useState } from 'react';
-import { XCircle } from 'lucide-react';
+import { XCircle, FileText, Plus, Link } from 'lucide-react';
 import tableClasses from '../../utils/tableClasses';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -8,6 +7,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 const TodoForm = ({ selectedTodo, onSave, onCancel }) => {
   const [form, setForm] = useState({ title: '', note: '', date: null, links: [] });
   const [links, setLinks] = useState([]);
+  const [showNote, setShowNote] = useState(false);
 
   useEffect(() => {
     if (selectedTodo) {
@@ -18,9 +18,9 @@ const TodoForm = ({ selectedTodo, onSave, onCancel }) => {
         date: selectedTodo.date ? new Date(selectedTodo.date) : null,
       });
       setLinks(selectedTodo.links || []);
+      setShowNote(!!selectedTodo.note);
     } else {
-      setForm({ title: '', note: '', date: null });
-      setLinks([]);
+      resetForm();
     }
   }, [selectedTodo]);
 
@@ -47,6 +47,8 @@ const TodoForm = ({ selectedTodo, onSave, onCancel }) => {
   const resetForm = () => {
     setForm({ title: '', note: '', date: null });
     setLinks([]);
+    setShowNote(false);
+    onCancel(); // Bu satırı ekledik
   };
 
   const handleFormSubmit = (e) => {
@@ -56,7 +58,6 @@ const TodoForm = ({ selectedTodo, onSave, onCancel }) => {
 
   const handleDateChange = (date) => {
     if (date) {
-      // Tarihi UTC'ye çevir
       const utcDate = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
       setForm({ ...form, date: new Date(utcDate) });
     } else {
@@ -64,76 +65,98 @@ const TodoForm = ({ selectedTodo, onSave, onCancel }) => {
     }
   };
 
+  const toggleNote = () => setShowNote(!showNote);
+
   return (
-    <form onSubmit={handleFormSubmit} className={tableClasses.formContainer}>
-      <div className="mb-4">
-        <label className={tableClasses.formLabel}>Title</label>
-        <input
-          type="text"
-          className={tableClasses.formInput}
-          name="title"
-          value={form.title}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div className="mb-4">
-        <label className={tableClasses.formLabel}>Note</label>
-        <textarea
-          className={tableClasses.formInput}
-          name="note"
-          value={form.note}
-          onChange={handleInputChange}
-        />
-      </div>
-      <div className="mb-4">
-        <label className={tableClasses.formLabel}>Date</label>
-        <DatePicker
-          selected={form.date}
-          onChange={handleDateChange}
-          dateFormat="dd/MM/yyyy"
-          className={tableClasses.formInput}
-        />
-      </div>
-
-      {/* Linklerin eklenmesi */}
-      <div className="mb-4">
-        <button type="button" onClick={handleAddLink} className={tableClasses.addButton}>
-          Add Link
+    <form onSubmit={handleFormSubmit} className={tableClasses.formContainer + " space-y-4"}>
+      <input
+        type="text"
+        className={`${tableClasses.formInput} w-full`}
+        name="title"
+        value={form.title}
+        onChange={handleInputChange}
+        placeholder="Title"
+        required
+      />
+      <DatePicker
+        selected={form.date}
+        onChange={handleDateChange}
+        dateFormat="dd/MM/yyyy"
+        className={`${tableClasses.formInput} w-full mr-10`}
+        placeholderText="Date"
+      />
+      <div className='flex items-center justify-center space-x-2'>
+        <button
+          type="button"
+          onClick={handleAddLink}
+          className="hover:bg-gray-300 font-semibold text-sm px-4 py-2 rounded transition bg-gray-200 shadow-sm text-black w-1/2 flex items-center justify-center"
+        >
+          <Link className="w-4 h-5" />
         </button>
-        {links.map((link, index) => (
-          <div key={index} className="flex items-center space-x-2 mb-2">
-            <input
-              type="text"
-              placeholder="URL"
-              className={tableClasses.formInput}
-              value={link.url}
-              onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Icon"
-              className={tableClasses.formInput}
-              value={link.icon}
-              onChange={(e) => handleLinkChange(index, 'icon', e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={() => handleRemoveLink(index)}
-              className={tableClasses.cancelButton}
-            >
-              Remove
-            </button>
-          </div>
-        ))}
+        <button
+          type="button"
+          onClick={toggleNote}
+          className="hover:bg-gray-300 font-semibold text-sm px-4 py-2 rounded transition bg-gray-200 shadow-sm text-black w-1/2 flex items-center justify-center"
+        >
+          <FileText className="w-4 h-5" />
+        </button>
+      </div>
+      <div className="flex space-x-2">
+        <button
+          type="submit"
+          className={`${tableClasses.formButton} ${selectedTodo ? 'w-4/6' : 'w-full'}`}
+        >
+          {selectedTodo ? 'Update' : 'Add'}
+        </button>
+        {selectedTodo && (
+          <button
+            type="button"
+            onClick={resetForm}
+            className={`${tableClasses.formButton} w-2/6 flex items-center justify-center`}
+          >
+            <XCircle className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      <button type="submit" className={tableClasses.formButton}>
-        {selectedTodo ? 'Update Todo' : 'Add Todo'}
-      </button>
-      {selectedTodo && (
-        <XCircle onClick={resetForm} className="cursor-pointer text-gray-600 hover:text-gray-800 ml-2" />
+      {showNote && (
+        <div className="mb-4">
+          <textarea
+            className={tableClasses.formInput + " w-full"}
+            name="note"
+            value={form.note}
+            onChange={handleInputChange}
+            placeholder="Note"
+            rows="3"
+          />
+        </div>
       )}
+
+      {links.map((link, index) => (
+        <div key={index} className="flex items-center space-x-2">
+          <input
+            type="text"
+            placeholder="URL"
+            className={tableClasses.formInput + " w-6/12 text-xs py-2"}
+            value={link.url}
+            onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Icon"
+            className={tableClasses.formInput + " w-4/12 text-xs py-2"}
+            value={link.icon}
+            onChange={(e) => handleLinkChange(index, 'icon', e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => handleRemoveLink(index)}
+            className={tableClasses.cancelButton + " w-2/12"}
+          >
+           <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+      ))}
     </form>
   );
 };

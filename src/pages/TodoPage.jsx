@@ -1,5 +1,5 @@
 // TodoPage.jsx
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TodoForm from '../components/Todos/TodoForm';
 import TodoList from '../components/Todos/TodoList';
@@ -9,6 +9,7 @@ import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { formatDate, getNextDay } from '../components/Todos/dateUtils';
+import tableClasses from '../utils/tableClasses';
 
 const TodoPage = () => {
     const { user, loading } = useContext(AuthContext);
@@ -16,11 +17,11 @@ const TodoPage = () => {
 
     const [todos, setTodos] = useState([]);
     const [selectedTodo, setSelectedTodo] = useState(null);
-    const [isFormOpen, setIsFormOpen] = useState(false);
     const [notification, setNotification] = useState(null);
     const [categories, setCategories] = useState([]);
     const [notReviewedUrls, setNotReviewedUrls] = useState([]);
     const [sites, setSites] = useState([]); 
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     const API_URL = import.meta.env.VITE_API_URL;
 
@@ -227,17 +228,28 @@ const TodoPage = () => {
             }
 
             setNotification({ message: 'Todo saved successfully', type: 'success' });
-            setIsFormOpen(false);
             setSelectedTodo(null);
         } catch (error) {
             console.error('Error saving todo:', error);
-            setNotification({ message: 'Error saving todo', type: 'error' });
+            let errorMessage = 'Error saving todo';
+            if (error.response && error.response.data && error.response.data.details) {
+                errorMessage += ': ' + error.response.data.details;
+            }
+            setNotification({ message: errorMessage, type: 'error' });
         }
     };
 
+    const formRef = useRef(null);
+
     const handleEdit = (todo) => {
         setSelectedTodo(todo);
-        setIsFormOpen(true);
+        if (formRef.current) {
+            formRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    const handleFormCancel = () => {
+        setSelectedTodo(null);
     };
 
     const handleDelete = async (id) => {
@@ -255,8 +267,19 @@ const TodoPage = () => {
 
     const groupedTodos = groupTodosByDate(todos);
 
+    useEffect(() => {
+        const handleResize = () => {
+            const newIsMobile = window.innerWidth < 768;
+            setIsMobile(newIsMobile);
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize(); // İlk yükleme için çağır
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     return (
-        <div className="container mx-auto p-4">
+        <div className="container mx-auto p-2">
             {notification && (
                 <Notification
                     message={notification.message}
@@ -264,36 +287,38 @@ const TodoPage = () => {
                     onClose={() => setNotification(null)}
                 />
             )}
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Todos</h1>
-                <button onClick={() => { setIsFormOpen(!isFormOpen); setSelectedTodo(null); }} className="bg-blue-500 text-white px-4 py-2 rounded">
-                    {isFormOpen ? 'Close Form' : 'Add Todo'}
-                </button>
-            </div>
-
-            {isFormOpen && (
-                <TodoForm
-                    selectedTodo={selectedTodo}
-                    onSave={handleSave}
-                    onCancel={() => setIsFormOpen(false)}
-                />
-            )}
-
-            {Object.entries(groupedTodos).map(([date, todos]) => (
-                <div key={date}>
-                    <h2 className="text-lg font-bold mt-4 mb-2">{date}</h2>
-                    <TodoList
-                        todos={todos}
-                        onEdit={handleEdit}
-                        onToggleDone={handleToggleDone}
-                        onDateChange={handleDateChange}
-                        onDelete={handleDelete}
-                        categories={categories}
-                        notReviewedUrls={notReviewedUrls}
-                        sites={sites} 
+            <h1 className={tableClasses.h1}>Todos</h1>
+            
+            <div className="sm:space-x-8 flex flex-col md:flex-row">
+                {/* Form Section */}
+                <div ref={formRef} className="sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0">
+                    <TodoForm
+                        key={selectedTodo ? selectedTodo.id : 'new'}
+                        selectedTodo={selectedTodo}
+                        onSave={handleSave}
+                        onCancel={handleFormCancel}
                     />
                 </div>
-            ))}
+
+                {/* List Section */}
+                <div className="w-full md:w-9/12">
+                    {Object.entries(groupedTodos).map(([date, todos]) => (
+                        <div key={date} className="mb-6">
+                            <h2 className={tableClasses.h2}>{date}</h2>
+                            <TodoList
+                                todos={todos}
+                                onEdit={handleEdit}
+                                onToggleDone={handleToggleDone}
+                                onDateChange={handleDateChange}
+                                onDelete={handleDelete}
+                                categories={categories}
+                                notReviewedUrls={notReviewedUrls}
+                                sites={sites} 
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };

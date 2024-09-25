@@ -5,8 +5,8 @@ const passport = require("passport");
 const jwt = require('jsonwebtoken');
 const db = require('./db');
 
-const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.VITE_GOOGLE_CLIENT_SECRET;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import SiteForm from '../components/Sites/SiteForm';
 import SiteList from '../components/Sites/SiteList';
 import Notification from '../utils/Notification';
+import tableClasses from '../utils/tableClasses';
 
 const SitePage = () => {
   const [notification, setNotification] = useState(null);
@@ -28,13 +29,13 @@ const SitePage = () => {
   };
 
   return (
-    <div className="container mx-auto mt-10 px-4">
-      <h1 className="text-3xl font-bold mb-6 flex justify-between items-center">
-        Site Management
+    <div className="container mx-auto p-2">
+     <h1 className={tableClasses.h1}>Sites</h1>
+        
         <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" onClick={handleAddNewSite}>
           {showSiteForm ? 'Close Form' : '+ Add Site'}
         </button>
-      </h1>
+     
 
       {notification && (
         <Notification

@@ -261,10 +261,10 @@ const SiteList = ({ onNotification }) => {
           ))}
         </ul>
         <button
-          className="text-blue-500 hover:text-blue-700"
+          className="text-gray-600 hover:text-blue-700"
           onClick={() => setShowBulkUpdate(!showBulkUpdate)}
         >
-          <Settings /> Bulk Update Visitors
+          <Settings /> 
         </button>
       </div>
 
@@ -278,13 +278,14 @@ const SiteList = ({ onNotification }) => {
 
       {/* Site Tablosu */}
       <table className={tableClasses.table}>
-        <thead className={tableClasses.tableHeader}>
-          <tr>
-            <th className={tableClasses.tableHeaderCell}><CheckSquare /></th>
-            <th className={tableClasses.tableHeaderCell}>Domain Name</th>
-            <th className={tableClasses.tableHeaderCell}>Monthly Visitors</th>
-            <th className={tableClasses.tableHeaderCell}>Language</th>
-            <th className={tableClasses.tableHeaderCell}>Actions</th>
+        <thead className={tableClasses.tableHeaderRow}>
+        <tr>
+            <th className={tableClasses.tableHeader + " w-1/12"}>Check</th>
+            <th className={tableClasses.tableHeader + " w-5/12 text-left px-2"}>Domain Name</th>
+            <th className={tableClasses.tableHeader + " w-2/12"}>Monthly</th>
+            <th className={tableClasses.tableHeader + " w-1/12"}>Language</th>
+            <th className={tableClasses.tableHeader + " w-2/12"}>Download</th>
+            <th className={tableClasses.tableHeader + " w-1/12"}>Actions</th>
           </tr>
         </thead>
         <tbody className={tableClasses.tableBody}>
@@ -297,31 +298,31 @@ const SiteList = ({ onNotification }) => {
                   onChange={() => handleCheckboxChange(site)}
                 />
               </td>
-              <td className={tableClasses.tableCell}>{site.domain_name}</td>
+              <td className="border-b border-gray-100 text-left text-sm px-2">
+              {site.hasNotReviewed ? (
+                    <Link to={`/url-review/${site.domain_name}`} className={tableClasses.noteIcon}>
+                      {site.domain_name}
+                    </Link>
+                  ) : (
+                    <span>{site.domain_name}</span>
+                  )}
+              </td>
               <td className={tableClasses.tableCell}>{site.monthly_visitors}</td>
               <td className={tableClasses.tableCell}>{site.language}</td>
               <td className={tableClasses.tableCell}>
-                <div className={tableClasses.actionContainer}>
-                  {site.hasNotReviewed && (
-                    <Link to={`/url-review/${site.domain_name}`} className={tableClasses.noteIcon}>
-                      <Eye />
-                    </Link>
-                  )}
-                  
-                    <button className={tableClasses.downloadIcon} onClick={() => handleDownload(site.domain_name, site.language, site.monthly_visitors)}>
-                      <Download />
+              <button onClick={() => handleDownload(site.domain_name, site.language, site.monthly_visitors)}>
+                      <Download className={tableClasses.downloadIcon} strokeWidth={2} />
                     </button>
-                  
-                  {site.hasExcelFile && (
-                    <button className={tableClasses.excelIcon}>
-                      <FileText />
-                    </button>
-                  )}
-                  <button className={tableClasses.editIcon} onClick={() => handleEditClick(site)}>
-                    <Edit />
+
+              </td>
+              <td className={tableClasses.tableCell}>
+                <div className="flex items-center justify-center space-x-2 h-full">
+              
+                  <button onClick={() => handleEditClick(site)}>
+                    <Edit className={tableClasses.editIcon} strokeWidth={2}  />
                   </button>
-                  <button className={tableClasses.deleteIcon} onClick={() => handleDelete(site.id)}>
-                    <Trash2 />
+                  <button onClick={() => handleDelete(site.id)}>
+                    <Trash2 className={tableClasses.deleteIcon} strokeWidth={2}  />
                   </button>
                 </div>
               </td>
@@ -337,18 +338,15 @@ const SiteList = ({ onNotification }) => {
         </tbody>
       </table>
 
-      {/* Download Report Linki */}
-      <div className="mt-4">
+            <div className="mt-4 flex items-center justify-between">
         <button 
           onClick={handleBulkDownload}
-          className="text-blue-500 hover:text-blue-700"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Download Report
         </button>
-      </div>
+      
 
-      {/* Add All New URLs Button */}
-      <div className="mt-4">
         <button 
           onClick={handleAddAllNewUrls}
           className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"

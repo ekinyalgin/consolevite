@@ -1,6 +1,6 @@
-// components/Todo/TodoList.jsx
+// components/Todos/TodoList.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Edit, Trash2, CheckCircle, XCircle, Plus, ExternalLink, ArrowRight } from 'lucide-react';
+import { Edit, Trash2, CheckCircle, XCircle, Check, Plus, NotebookPen, ExternalLink, ArrowRight } from 'lucide-react';
 import tableClasses from '../../utils/tableClasses';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -40,38 +40,46 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, notRevi
         return randomUrls.map(url => url.domain_name);
     };
 
+    const handleDelete = (id, title) => {
+        if (window.confirm(`"${title}" görevini silmek istediğinizden emin misiniz?`)) {
+            onDelete(id);
+        }
+    };
+
     return (
+        <div className="overflow-x-auto w-full">
         <table className={tableClasses.table}>
-            <thead>
-                <tr className={tableClasses.tableHeaderRow}>
-                    <th className={tableClasses.tableHeaderCell}>Done</th>
-                    <th className={tableClasses.tableHeaderCell}>Title</th>
-                    <th className={tableClasses.tableHeaderCell}>Note</th>
-                    <th className={tableClasses.tableHeaderCell}>Date</th>
-                    <th className={tableClasses.tableHeaderCell}>Links</th>
-                    <th className={tableClasses.tableHeaderCell}>Blog</th>
-                    <th className={tableClasses.tableHeaderCell}>Actions</th>
+            <thead className={tableClasses.tableHeaderRow}>
+                <tr>
+                    <th className={tableClasses.tableHeader + " w-1/12"}>Done</th>
+                    <th className={tableClasses.tableHeader + " w-3/12 text-left px-2"}>Title</th>
+                    <th className={tableClasses.tableHeader + " w-1/12"}>Note</th>
+                    <th className={tableClasses.tableHeader + " w-2/12"}>Date</th>
+                    <th className={tableClasses.tableHeader + " w-1/12 text-left px-2"}>Links</th>
+                    <th className={tableClasses.tableHeader + " w-2/12 text-left px-2"}>Blog</th>
+                    <th className={tableClasses.tableHeader + " w-2/12"}>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {todos.map((todo) => (
                     <React.Fragment key={todo.id}>
                         <tr className={tableClasses.tableRow}>
-                            <td className={tableClasses.tableCell}>
+                            <td className={tableClasses.tableCell + " text-center"}>
                                 <button onClick={() => onToggleDone(todo.id, todo.date)}>
-                                    {todo.done ? <CheckCircle className="text-green-500" /> : <XCircle className="text-red-500" />}
+                                <Check className={tableClasses.checkIcon} strokeWidth={3} />
+
                                 </button>
                             </td>
-                            <td className={tableClasses.tableCell}>{todo.title}</td>
+                            <td className="border-b border-gray-100 text-left text-sm px-2">{todo.title}</td>
                             <td className={tableClasses.tableCell}>
                                 {todo.note && (
                                     <button onClick={() => toggleNote(todo.id)} className={tableClasses.iconButton}>
-                                        <Plus />
+                                        <NotebookPen className="text-gray-600 hover:text-green-800 w-4" strokeWidth={2} />
                                     </button>
                                 )}
                             </td>
                             <td
-                                className={tableClasses.tableCell}
+                                className={tableClasses.tableCell + " text-xs"}
                                 onClick={() => handleDateClick(todo.id)}
                             >
                                 {editingDate === todo.id ? (
@@ -82,7 +90,7 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, notRevi
                                             setEditingDate(null);
                                         }}
                                         dateFormat="dd.MM.yyyy"
-                                        className={tableClasses.formInput}
+                                        className="text-center bg-transparent"
                                         ref={(el) => datePickerRefs.current[todo.id] = el}
                                         onClickOutside={() => setEditingDate(null)}
                                     />
@@ -91,31 +99,42 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, notRevi
                                 )}
                             </td>
                             <td className={tableClasses.tableCell}>
-                                {todo.links && todo.links.map((link, index) => (
-                                    <a 
-                                        key={index} 
-                                        href={link.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="mr-2"
-                                        dangerouslySetInnerHTML={{ __html: link.icon }}
-                                    />
-                                ))}
+                                <div className="flex items-center space-x-2">
+                                    {todo.links && todo.links.map((link, index) => (
+                                        <a 
+                                            key={index} 
+                                            href={link.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            dangerouslySetInnerHTML={{ __html: link.icon }}
+                                        />
+                                    ))}
+                                </div>
                             </td>
+
                             <td className={tableClasses.tableCell}>
-                                {getDomainsWithNotReviewed(todo.title).map((domain, index) => (
-                                    <Link key={index} to={`/url-review/${domain}`} className="block text-blue-500 hover:underline">
-                                        {domain}
-                                    </Link>
-                                ))}
+                                <div className="flex items-center space-x-2">
+                                    {getDomainsWithNotReviewed(todo.title).map((domain, index) => (
+                                        <Link key={index} to={`/url-review/${domain}`} className="text-black flex items-center justify-center">
+                                            <ArrowRight className="text-gray-600 hover:text-green-800 w-4" strokeWidth={2} />
+                                        </Link>
+                                    ))}
+                                </div>
                             </td>
+
                             <td className={tableClasses.tableCell}>
-                                <button onClick={() => onEdit(todo)} className={tableClasses.iconButton}>
-                                    <Edit />
-                                </button>
-                                <button onClick={() => onDelete(todo.id)} className={tableClasses.iconButton}>
-                                    <Trash2 />
-                                </button>
+                                <div className="flex items-center justify-center space-x-2 h-full">
+                                    <button onClick={() => onEdit(todo)} className={tableClasses.iconButton}>
+                                        <Edit className={tableClasses.editIcon} strokeWidth={2} />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDelete(todo.id, todo.title)} 
+                                        className={tableClasses.iconButton}
+                                        title="Görevi sil"
+                                    >
+                                        <Trash2 className={tableClasses.deleteIcon} strokeWidth={2} />
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         {expandedRows.includes(todo.id) && (
@@ -129,6 +148,7 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, notRevi
                 ))}
             </tbody>
         </table>
+        </div>
     );
 };
 

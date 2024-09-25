@@ -7,15 +7,13 @@ import RightSidebar from "../components/RightSidebar";
 
 const Layout = () => {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="shadow-sm">
+    <div className="bg-gray-50 min-h-screen flex flex-col">
+      <header className="mb-4 sm:mb-10">
         <Header />
       </header>
       <main className="container mx-auto flex flex-1">
-        <aside className="w-2/12">
-          <LeftSidebar />
-        </aside>
-        <section className="w-full">
+
+        <section className="p-1 w-full mx-auto max-w-screen-lg">
           
           <Outlet />
         </section>
