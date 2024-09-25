@@ -10,6 +10,7 @@ const {
 } = require('../controllers/todoController');
 const { authorize, isAdmin } = require('../middlewares/auth');
 
+// Tüm rotaları authorize ve isAdmin middleware'leri ile koruyun
 router.get('/', authorize, isAdmin, getAllTodos);
 router.post('/', authorize, isAdmin, createTodo);
 router.delete('/:id', authorize, isAdmin, deleteTodo);

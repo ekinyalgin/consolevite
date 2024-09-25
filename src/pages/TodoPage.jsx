@@ -10,20 +10,87 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { formatDate, getNextDay } from '../components/Todos/dateUtils';
 import tableClasses from '../utils/tableClasses';
+import { LoaderCircle } from 'lucide-react'; // Lucide ikonunu import ediyoruz
 
 const TodoPage = () => {
     const { user, loading } = useContext(AuthContext);
     const navigate = useNavigate();
-
+    const [pageState, setPageState] = useState('loading');
     const [todos, setTodos] = useState([]);
     const [selectedTodo, setSelectedTodo] = useState(null);
     const [notification, setNotification] = useState(null);
     const [categories, setCategories] = useState([]);
     const [notReviewedUrls, setNotReviewedUrls] = useState([]);
-    const [sites, setSites] = useState([]); 
+    const [sites, setSites] = useState([]);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     const API_URL = import.meta.env.VITE_API_URL;
+    const formRef = useRef(null);
+
+    useEffect(() => {
+        if (!loading) {
+            if (!user) {
+                setPageState('unauthorized');
+            } else if (user.role !== 'admin') {
+                setPageState('forbidden');
+            } else {
+                setPageState('loading');
+                fetchData();
+            }
+        }
+    }, [user, loading]);
+
+    const fetchData = async () => {
+        try {
+            await Promise.all([
+                fetchTodos(),
+                fetchCategories(),
+                fetchNotReviewedUrls(),
+                fetchSites()
+            ]);
+            setPageState('loaded');
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            setNotification({ message: 'Failed to fetch data', type: 'error' });
+            setPageState('error');
+        }
+    };
+
+    const fetchTodos = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/todos`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setTodos(response.data);
+        } catch (error) {
+            setNotification({ message: 'Failed to fetch todos', type: 'error' });
+        }
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/sites/categories`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setCategories(response.data);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        }
+    };
+
+    const fetchNotReviewedUrls = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${API_URL}/urls/not-reviewed`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setNotReviewedUrls(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error('Error fetching not reviewed URLs:', error);
+        }
+    };
 
     const fetchSites = async () => {
         try {
@@ -31,26 +98,12 @@ const TodoPage = () => {
             const response = await axios.get(`${API_URL}/sites`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setSites(response.data); // Gelen verileri sites state'ine atadık
+            setSites(response.data);
         } catch (error) {
             console.error('Error fetching sites:', error);
         }
     };
 
-    useEffect(() => {
-        if (!loading) {
-            if (!user) {
-                navigate('/login');
-            } else {
-                fetchTodos();
-                fetchCategories();
-                fetchNotReviewedUrls();
-                fetchSites(); // sites verisini çekmek için fetchSites fonksiyonunu çağırdık
-            }
-        }
-    }, [user, loading, navigate]);
-
-    // Görevleri gruplandıran fonksiyon
     const groupTodosByDate = (todos) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -100,54 +153,6 @@ const TodoPage = () => {
         return orderedTodos;
     };
 
-    const fetchTodos = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/todos`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setTodos(response.data);
-        } catch (error) {
-            setNotification({ message: 'Failed to fetch todos', type: 'error' });
-        }
-    };
-
-    const fetchCategories = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/sites/categories`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setCategories(response.data);
-        } catch (error) {
-            console.error('Error fetching categories:', error);
-        }
-    };
-
-    const fetchNotReviewedUrls = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/urls/not-reviewed`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setNotReviewedUrls(Array.isArray(response.data) ? response.data : []);
-        } catch (error) {
-            console.error('Error fetching not reviewed URLs:', error);
-        }
-    };
-
-    useEffect(() => {
-        if (!loading) {
-            if (!user) {
-                navigate('/login');
-            } else {
-                fetchTodos();
-                fetchCategories();
-                fetchNotReviewedUrls();
-            }
-        }
-    }, [user, loading, navigate]);
-
     const handleToggleDone = async (id, currentDate) => {
         try {
             let nextDate;
@@ -186,7 +191,6 @@ const TodoPage = () => {
                 throw new Error('Invalid date selection.');
             }
 
-            // Tarihi UTC'ye çevir
             const utcDate = Date.UTC(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
             const formattedDate = new Date(utcDate).toISOString().split('T')[0];
 
@@ -239,8 +243,6 @@ const TodoPage = () => {
         }
     };
 
-    const formRef = useRef(null);
-
     const handleEdit = (todo) => {
         setSelectedTodo(todo);
         if (formRef.current) {
@@ -265,8 +267,6 @@ const TodoPage = () => {
         }
     };
 
-    const groupedTodos = groupTodosByDate(todos);
-
     useEffect(() => {
         const handleResize = () => {
             const newIsMobile = window.innerWidth < 768;
@@ -274,9 +274,46 @@ const TodoPage = () => {
         };
 
         window.addEventListener('resize', handleResize);
-        handleResize(); // İlk yükleme için çağır
+        handleResize();
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    if (pageState === 'loading') {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <LoaderCircle className="animate-spin text-blue-500" size={48} />
+            </div>
+        );
+    }
+
+    if (pageState === 'unauthorized') {
+        return (
+            <div className="container mx-auto p-4">
+                <h1 className={tableClasses.h1}>Access Denied</h1>
+                <p>Please log in to view this page.</p>
+            </div>
+        );
+    }
+
+    if (pageState === 'forbidden') {
+        return (
+            <div className="container mx-auto p-4">
+                <h1 className={tableClasses.h1}>Unauthorized Access</h1>
+                <p>Sorry, you don't have permission to view this page. Only administrators can access the Todo list.</p>
+            </div>
+        );
+    }
+
+    if (pageState === 'error') {
+        return (
+            <div className="container mx-auto p-4">
+                <h1 className={tableClasses.h1}>Error</h1>
+                <p>An error occurred while loading the page. Please try again later.</p>
+            </div>
+        );
+    }
+
+    const groupedTodos = groupTodosByDate(todos);
 
     return (
         <div className="container mx-auto p-2">

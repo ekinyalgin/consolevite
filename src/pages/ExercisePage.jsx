@@ -1,13 +1,18 @@
-// pages/ExercisePage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ExerciseForm from '../components/Exercises/ExerciseForm';
 import ExerciseList from '../components/Exercises/ExerciseList';
 import { PlayCircle, Shuffle, X } from 'lucide-react';
 import Notification from '../utils/Notification';
-import { useNavigate } from 'react-router-dom';
-import tableClasses from '../utils/tableClasses'; 
+import tableClasses from '../utils/tableClasses';
+import { AuthContext } from '../contexts/AuthContext';
+import { LoaderCircle } from 'lucide-react';
+import axios from 'axios';
 
 const ExercisePage = () => {
+  const { user, loading } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [pageState, setPageState] = useState('loading');
   const [exercises, setExercises] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [notification, setNotification] = useState(null);
@@ -16,83 +21,76 @@ const ExercisePage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const API_URL = import.meta.env.VITE_API_URL;
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        setPageState('unauthorized');
+      } else if (user.role !== 'admin') {
+        setPageState('forbidden');
+      } else {
+        setPageState('loading');
+        fetchExercises();
+      }
+    }
+  }, [user, loading]);
 
   const fetchExercises = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/exercises`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, 
-        },
+      const response = await axios.get(`${API_URL}/exercises`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (response.status === 401) {
-        throw new Error('Unauthorized. Please log in again.');
-      }
-
-      const data = await response.json();
-      setExercises(data);
+      setExercises(response.data);
+      setPageState('loaded');
     } catch (error) {
-      showNotification(error.message || 'Failed to load exercises', 'error');
+      console.error('Error fetching exercises:', error);
+      showNotification('Failed to load exercises', 'error');
+      setPageState('error');
     }
   }, [API_URL]);
-
-  useEffect(() => {
-    fetchExercises();
-  }, [fetchExercises, refreshKey]);
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
   };
 
   const handleSave = async (exerciseData) => {
-    const token = localStorage.getItem('token');
-    const method = selectedExercise ? 'PUT' : 'POST';
-    const endpoint = selectedExercise
-      ? `${API_URL}/exercises/${selectedExercise.id}`
-      : `${API_URL}/exercises`;
-
     try {
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(exerciseData),
-      });
+      const token = localStorage.getItem('token');
+      let response;
 
-      if (response.status === 401) {
-        throw new Error('Unauthorized. Please log in again.');
+      if (exerciseData.id) {
+        response = await axios.put(`${API_URL}/exercises/${exerciseData.id}`, exerciseData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setExercises(prevExercises => prevExercises.map(exercise => 
+          exercise.id === exerciseData.id ? response.data : exercise
+        ));
+      } else {
+        response = await axios.post(`${API_URL}/exercises`, exerciseData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setExercises(prevExercises => [...prevExercises, response.data]);
       }
 
-      setRefreshKey(oldKey => oldKey + 1);
-      showNotification(selectedExercise ? 'Exercise updated successfully' : 'Exercise added successfully', 'success');
+      showNotification(exerciseData.id ? 'Exercise updated successfully' : 'Exercise added successfully', 'success');
       setSelectedExercise(null);
     } catch (error) {
-      showNotification(error.message || 'Failed to save exercise', 'error');
+      console.error('Error saving exercise:', error);
+      showNotification('Failed to save exercise', 'error');
     }
   };
 
   const handleDelete = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/exercises/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+      await axios.delete(`${API_URL}/exercises/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!response.ok) throw new Error('Request failed');
-
-      setRefreshKey(oldKey => oldKey + 1);
+      setExercises(prevExercises => prevExercises.filter(exercise => exercise.id !== id));
       showNotification('Exercise deleted successfully', 'success');
     } catch (error) {
+      console.error('Error deleting exercise:', error);
       showNotification('Failed to delete exercise', 'error');
     }
   };
@@ -142,6 +140,41 @@ const ExercisePage = () => {
     const selectedExercises = exercises.filter((exercise) => selectedIds.includes(exercise.id));
     navigate('/start-exercise', { state: { exercises: selectedExercises } });
   };
+
+  if (pageState === 'loading') {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <LoaderCircle className="animate-spin text-blue-500" size={48} />
+      </div>
+    );
+  }
+
+  if (pageState === 'unauthorized') {
+    return (
+      <div className="container mx-auto p-4">
+        <h1 className={tableClasses.h1}>Access Denied</h1>
+        <p>Please log in to view this page.</p>
+      </div>
+    );
+  }
+
+  if (pageState === 'forbidden') {
+    return (
+      <div className="container mx-auto p-4">
+        <h1 className={tableClasses.h1}>Unauthorized Access</h1>
+        <p>Sorry, you don't have permission to view this page. Only administrators can access the Exercises list.</p>
+      </div>
+    );
+  }
+
+  if (pageState === 'error') {
+    return (
+      <div className="container mx-auto p-4">
+        <h1 className={tableClasses.h1}>Error</h1>
+        <p>An error occurred while loading the page. Please try again later.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-2">

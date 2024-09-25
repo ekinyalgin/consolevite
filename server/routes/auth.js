@@ -38,7 +38,7 @@ router.get(
       res.redirect(`${CLIENT_URL}?token=${encodeURIComponent(token)}&refreshToken=${encodeURIComponent(refreshToken)}`);
     } else {
       console.log("User or tokens not found in req.user");
-      res.redirect(`${CLIENT_URL}/`);
+      res.redirect(`${CLIENT_URL}/login`);
     }
   }
 );
