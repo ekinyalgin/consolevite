@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import VideoForm from '../components/Videos/VideoForm';
 import VideoList from '../components/Videos/VideoList';
 import Notification from '../utils/Notification';
-import { XCircle } from 'lucide-react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import tableClasses from '../utils/tableClasses';
@@ -11,8 +10,6 @@ const VideosPage = () => {
     const { user, loading } = useContext(AuthContext);
     const navigate = useNavigate();
     const [videos, setVideos] = useState([]);
-    const [search, setSearch] = useState('');
-    const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [message, setMessage] = useState(null);
     const [offset, setOffset] = useState(0);
@@ -22,25 +19,25 @@ const VideosPage = () => {
         if (!loading) {
             if (!user) {
                 showNotification('Please log in to access this page.', 'error');
-                navigate('/'); // Giriş yapılmamışsa anasayfaya yönlendir
+                navigate('/');
             } else if (user.role !== 'admin') {
                 showNotification('Access denied. Admin role required.', 'error');
-                navigate('/'); // Admin değilse anasayfaya yönlendir
+                navigate('/');
             } else {
-                fetchVideos(true); // Giriş yapıldıysa ve admin ise videoları yükle
+                fetchVideos(true);
             }
         }
     }, [user, loading, navigate]);
 
     const fetchVideos = async (initialLoad = false) => {
         try {
-            const token = localStorage.getItem('token'); // Token'ı localStorage'dan al
+            const token = localStorage.getItem('token');
             
             const response = await fetch(`${import.meta.env.VITE_API_URL}/videos?limit=${limit}&offset=${initialLoad ? 0 : offset}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // Authorization başlığını ekle
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
@@ -62,18 +59,8 @@ const VideosPage = () => {
         }
     };
 
-    const handleSearch = (e) => {
-        setSearch(e.target.value);
-    };
-
-    const toggleForm = () => {
-        setIsFormOpen(!isFormOpen);
-        setSelectedVideo(null);
-    };
-
     const openEditForm = (video) => {
         setSelectedVideo(video);
-        setIsFormOpen(true);
     };
 
     const showNotification = (msg, type) => {
@@ -82,42 +69,55 @@ const VideosPage = () => {
 
     const resetForm = () => {
         setSelectedVideo(null);
-        setIsFormOpen(false);
     };
 
-    const filteredVideos = videos.filter(video => video.title.toLowerCase().includes(search.toLowerCase()));
+    const goToRandomVideo = () => {
+        if (videos.length > 0) {
+            const randomIndex = Math.floor(Math.random() * videos.length);
+            const randomVideo = videos[randomIndex];
+            window.open(randomVideo.url, '_blank');
+        } else {
+            showNotification('No videos available', 'error');
+        }
+    };
 
     return (
         <div className="container mx-auto p-2">
-
             {message && <Notification message={message.text} type={message.type} onClose={() => setMessage(null)} />}
             {loading ? (
                 <p>Loading...</p>
             ) : (
                 <>
-                          <h1 className={tableClasses.h1}>Videos</h1>
-
-                        Videos <button onClick={toggleForm}>{isFormOpen ? '-' : '+'}</button>
-                    
-                    {isFormOpen && (
-                        <div>
-                            <VideoForm fetchVideos={() => fetchVideos(true)} selectedVideo={selectedVideo} showNotification={showNotification} />
-                            {selectedVideo && <XCircle onClick={resetForm} className="cursor-pointer text-gray-600 hover:text-gray-800" />}
+                    <h1 className={tableClasses.h1}>Videos</h1>
+                    <div className="sm:space-x-8 flex flex-col md:flex-row">
+                        <div className="sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0">
+                            <VideoForm 
+                                fetchVideos={() => fetchVideos(true)} 
+                                selectedVideo={selectedVideo} 
+                                showNotification={showNotification}
+                                resetForm={resetForm}
+                            />
                         </div>
-                    )}
-                    <input
-                        type="text"
-                        placeholder="Search by title"
-                        value={search}
-                        onChange={handleSearch}
-                    />
-                    <VideoList videos={filteredVideos} fetchVideos={() => fetchVideos(true)} setSelectedVideo={openEditForm} showNotification={showNotification} />
-                    
-                    {videos.length % limit === 0 && (
-                        <button onClick={() => fetchVideos()} className={tableClasses.transButton + " mt-4"}>
-                            Load More
-                        </button>
-                    )}
+                        <div className="lg:w-9/12">
+                            <VideoList 
+                                videos={videos} 
+                                fetchVideos={() => fetchVideos(true)} 
+                                setSelectedVideo={openEditForm} 
+                                showNotification={showNotification} 
+                            />
+                            
+                            <div className="flex justify-between mt-4">
+                                {videos.length % limit === 0 && (
+                                    <button onClick={() => fetchVideos()} className={tableClasses.transButton}>
+                                        Load More
+                                    </button>
+                                )}
+                                <button onClick={goToRandomVideo} className={tableClasses.transButton}>
+                                    Random Video
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </>
             )}
         </div>

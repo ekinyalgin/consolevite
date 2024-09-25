@@ -49,7 +49,7 @@ passport.use(
           user.last_login = new Date();
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
         const newRefreshToken = jwt.sign({ id: user.id, email: user.email }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
         done(null, { user, token, refreshToken: newRefreshToken });

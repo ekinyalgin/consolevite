@@ -1,6 +1,6 @@
 // components/Exercises/ExerciseList.jsx
 import React, { useState } from 'react';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, NotebookPen } from 'lucide-react';
 import tableClasses from '../../utils/tableClasses';
 
 const ExerciseList = ({ exercises, selectedIds, setSelectedIds, onEdit, onDelete, showOnlySelected }) => {
@@ -30,13 +30,13 @@ const ExerciseList = ({ exercises, selectedIds, setSelectedIds, onEdit, onDelete
 
   return (
     <table className={tableClasses.table}>
-      <thead>
-        <tr className={tableClasses.tableHeaderRow}>
-          <th className={tableClasses.tableHeaderCell}>Select</th>
-          <th className={tableClasses.tableHeaderCell}>Title</th>
-          <th className={tableClasses.tableHeaderCell}>Duration</th>
-          <th className={tableClasses.tableHeaderCell}>Description</th>
-          <th className={tableClasses.tableHeaderCell}>Actions</th>
+      <thead className={tableClasses.tableHeader}>
+        <tr>
+          <th className={tableClasses.tableHeader + " w-1/12"}>Select</th>
+          <th className={tableClasses.tableHeader + " w-5/12"}>Title</th>
+          <th className={tableClasses.tableHeader + " w-2/12"}>Duration</th>
+          <th className={tableClasses.tableHeader + " w-1/12"}>Description</th>
+          <th className={tableClasses.tableHeader + " w-3/12"}>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -50,22 +50,30 @@ const ExerciseList = ({ exercises, selectedIds, setSelectedIds, onEdit, onDelete
                   onChange={() => handleCheckboxChange(exercise.id)}
                 />
               </td>
-              <td className={tableClasses.tableCell}>{truncateTitle(exercise.title)}</td>
+              <td className={tableClasses.tableTitle}>{truncateTitle(exercise.title)}</td>
               <td className={tableClasses.tableCell}>{exercise.duration}</td>
               <td className={tableClasses.tableCell}>
                 {exercise.description && (
+
+
+
+
                   <button onClick={() => toggleDescription(exercise.id)} className={tableClasses.iconButton}>
-                    <Plus />
+                    <NotebookPen className={tableClasses.noteIcon} 
+                                            strokeWidth={2}
+                                        />
                   </button>
                 )}
               </td>
               <td className={tableClasses.tableCell}>
-                <button onClick={() => onEdit(exercise)} className={tableClasses.iconButton}>
-                  <Edit />
+              <div className="flex items-center justify-center space-x-2 h-full">
+                <button onClick={() => onEdit(exercise)}>
+                <Edit className={tableClasses.editIcon} strokeWidth={2}  />
                 </button>
-                <button onClick={() => onDelete(exercise.id)} className={tableClasses.iconButton}>
-                  <Trash2 />
+                <button onClick={() => onDelete(exercise.id)}>
+                <Trash2 className={tableClasses.deleteIcon} strokeWidth={2}  />
                 </button>
+                 </div>
               </td>
             </tr>
             {expandedRows.includes(exercise.id) && (

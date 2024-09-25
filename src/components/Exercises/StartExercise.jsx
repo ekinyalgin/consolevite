@@ -101,29 +101,17 @@ function StartExercises() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="px-2 sm:px-0 sm:flex items-center justify-between sm:space-x-10">
+
             {exercises.length > 0 ? (
                 <>
-                    <p className="text-gray-600 mb-4 text-sm">
-                        {exercises[currentExerciseIndex].description}
-                    </p>
-                    <div className="flex items-center justify-between space-x-10">
-                        {exercises[currentExerciseIndex].video_url && (
-                            <div className="w-6/12 my-10">
-                                <iframe 
-                                    className="rounded-2xl mx-auto w-full h-96"
-                                    src={getEmbedUrl(exercises[currentExerciseIndex].video_url)}
-                                    frameBorder="0" 
-                                    allow="autoplay; encrypted-media" 
-                                    allowFullScreen
-                                ></iframe>
-                            </div>
-                        )}
-                        <div className="w-6/12 space-y-10">
-                            <h1 className="text-5xl text-left font-bold text-gray-700 mt-4 mb-4">
+                <div className={`${exercises[currentExerciseIndex].video_url ? 'sm:w-4/12' : 'sm:w-10/12'} space-y-4 sm:space-y-10`}>
+
+                            <h1 className="text-6xl text-center sm:text-left font-bold text-gray-700 my-4">
                                 {getExerciseTitle()}
                             </h1>
-                            <div className="flex justify-between items-center mt-6 text-sm">
+                            <p className="text-gray-600 mb-4 text-center sm:text-left text-sm">{exercises[currentExerciseIndex].description}</p>
+                            <div className="text-sm space-y-4 sm:space-y-10 text-center sm:text-left">
                                 <div className='space-x-2'>
                                     <button onClick={handlePrevious} className="bg-transparent border border-gray-300 hover:border-gray-600 text-gray-600 font-bold px-4 rounded py-2">Previous</button>
                                     <button onClick={handleNext} className="bg-transparent border border-gray-300 hover:border-gray-600 text-gray-600 font-bold px-4 rounded py-2">Next</button>
@@ -131,24 +119,34 @@ function StartExercises() {
                                         {isPaused ? 'Resume' : 'Pause'}
                                     </button>
                                 </div>
-                                <div className="text-right flex space-x-6 text-base">
+                                <div className="text-center sm:text-left space-y-2 text-base">
                                     <p>Time Remaining: <strong>{new Date(exerciseTime * 1000).toISOString().substr(14, 5)}</strong></p>
                                     <p>Total Time Left: <strong>{new Date(totalTime * 1000).toISOString().substr(14, 5)}</strong></p>
                                 </div>
                             </div>
                         </div>
+                        {exercises[currentExerciseIndex].video_url && (
+                    <div className="mt-4 bg-gray-400 sm:mt-0 w-full sm:w-6/12">
+                                <iframe 
+                                    className="rounded-2xl mx-auto w-full h-60 sm:h-96"
+                                    src={getEmbedUrl(exercises[currentExerciseIndex].video_url)}
+                                    frameBorder="0" 
+                                    allow="autoplay; encrypted-media" 
+                                    allowFullScreen
+                                ></iframe>
                     </div>
-                    {/* Alt tarafta egzersizlerin isimlerini listeleme */}
-                    <div className="mt-8">
-                        <h2 className="text-xl font-bold">Selected Exercises:</h2>
-                        <ul className="list-disc pl-6">
+                        )}
+
+                    <div className="mt-4 sm:mt-0 text-center sm:text-left sm:w-2/12">
+                        <div>
                             {exercises.map((exercise, index) => (
-                                <li key={index} className={currentExerciseIndex === index ? "font-bold" : ""}>
+                                <span key={index} className={currentExerciseIndex === index ? "font-bold mb-2 inline-block w-full bg-gray-100 px-2 py-1 -ml-2 rounded" : " inline-block w-full mb-2 text-sm"}>
                                     {exercise.title}
-                                </li>
+                                </span>
                             ))}
-                        </ul>
+                        </div>
                     </div>
+                    
                 </>
             ) : (
                 <div>

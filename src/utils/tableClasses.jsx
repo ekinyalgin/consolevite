@@ -9,6 +9,7 @@ export const tableClasses = {
   title: "text-3xl font-bold text-gray-800 mb-6",
   addButton: "uppercase bg-blue-500 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs tracking-wider px-4 py-2 rounded transition",
   filterContainer: "text-sm flex justify-between items-center mb-4 space-x-4",
+  buttonContainer: "text-sm flex items-center mb-4 space-x-4",
   filterInput: "w-4/12 p-2 pl-3 font-lg shadow border border-gray-300 rounded",
   filterSelect: "p-2 shadow border border-gray-300 rounded",
   
@@ -30,16 +31,17 @@ export const tableClasses = {
   notDoneIcon: "text-gray-400 cursor-pointer transition transform hover:scale-110 ease-in-out duration-300", // Not Done ikonu
   randomIcon: "text-purple-500 hover:text-pfformButtonurple-700 cursor-pointer transition transform hover:scale-110 ease-in-out duration-300", // Random video ikonu
   noteIcon: "cursor-pointer text-gray-600 hover:text-green-800 w-4  transition transform hover:scale-110 ease-in-out duration-300",
-  downloadIcon: "text-gray-500 hover:text-blue-600 w-4 transition transform hover:scale-110 ease-in-out duration-300", 
-  editIcon: "text-blue-500 hover:text-blue-600 w-4 transition transform hover:scale-110 ease-in-out duration-300", 
-  deleteIcon: "text-red-500 hover:text-red-600 w-4 transition transform hover:scale-110 ease-in-out duration-300",
+  downloadIcon: "cursor-pointer text-gray-500 hover:text-blue-600 w-4 transition transform hover:scale-110 ease-in-out duration-300", 
+  editIcon: "cursor-pointer text-blue-500 hover:text-blue-600 w-4 transition transform hover:scale-110 ease-in-out duration-300", 
+  deleteIcon: "cursor-pointer text-red-500 hover:text-red-600 w-4 transition transform hover:scale-110 ease-in-out duration-300",
   checkIcon: "cursor-pointer text-green-500 hover:text-green-600 pt-1 w-4 transition transform hover:scale-110 ease-in-out duration-300",
+  checkIconBlack: "cursor-pointer text-black hover:text-green-600 pt-1 w-4 transition transform hover:scale-110 ease-in-out duration-300",
 
 
   // Form elemanları
-  formContainer: "",
+  formContainer: "space-y-4",
   formLabel: "block text-gray-700 text-sm font-bold mb-2",
-  formInput: "shadow-sm bg-gray-50 rounded font-normal py-2 px-3 text-gray-500 leading-tight focus:outline-none transition text-sm",
+  formInput: "w-full shadow-sm bg-gray-50 rounded font-normal py-2 px-3 text-gray-500 leading-tight focus:outline-none transition text-sm",
   formButton: "bg-blue-500 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-4 py-2 rounded transition",
   cancelButton: "bg-gray-400 hover:bg-gray-700 text-white font-bold py-2 px-2 rounded flex items-center justify-center",
   transButton: "bg-transparent border border-gray-500 text-black text-xs px-4 font-semibold py-2 rounded hover:bg-gray-600 hover:text-white transition",

@@ -17,6 +17,7 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
   const [languages, setLanguages] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingSite, setEditingSite] = useState(null);
+  const [allSelected, setAllSelected] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -120,6 +121,19 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
       setSelectedSites([...selectedSites, site]);
     }
   };
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedSites([]);
+    } else {
+      setSelectedSites([...sites]);
+    }
+    setAllSelected(!allSelected);
+  };
+
+  useEffect(() => {
+    setAllSelected(selectedSites.length === sites.length);
+  }, [selectedSites, sites]);
 
   const handleBulkDownload = async () => {
     if (selectedSites.length === 0) {
@@ -235,7 +249,13 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
       <table className={tableClasses.table}>
         <thead className={tableClasses.tableHeader}>
         <tr>
-            <th className={tableClasses.tableHeader + " w-1/12"}>Check</th>
+            <th className={tableClasses.tableHeader + " w-1/12"}>
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={handleSelectAll}
+              />
+            </th>
             <th className={tableClasses.tableHeader + " w-3/12 text-left px-2"}>Domain Name</th>
             <th className={tableClasses.tableHeader + " w-2/12"}>Monthly</th>
             <th className={tableClasses.tableHeader + " w-2/12"}>Language</th>

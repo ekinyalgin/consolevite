@@ -1,6 +1,7 @@
 // components/Exercises/ExerciseForm.jsx
 import React, { useEffect, useState } from 'react';
 import tableClasses from '../../utils/tableClasses';
+import { XCircle } from 'lucide-react';
 
 const ExerciseForm = ({ selectedExercise, onSave, onCancel }) => {
   const [form, setForm] = useState({ title: '', duration: '', description: '', video_url: '' });
@@ -46,54 +47,60 @@ const ExerciseForm = ({ selectedExercise, onSave, onCancel }) => {
     onSave(form);
   };
 
+  const resetForm = () => {
+    setForm({ title: '', duration: '', description: '', video_url: '' });
+    onCancel();
+  };
+
   return (
-    <form onSubmit={handleFormSubmit} className={tableClasses.formContainer}>
-      <div className="mb-4">
-        <label className={tableClasses.formLabel}>Title</label>
-        <input
-          type="text"
-          className={tableClasses.formInput}
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          required
-        />
-      </div>
-      <div className="mb-4">
-        <label className={tableClasses.formLabel}>Duration (MM:SS)</label>
-        <input
-          type="text"
-          placeholder="MM:SS"
-          className={tableClasses.formInput}
-          value={form.duration}
-          onChange={handleDurationChange}
-          required
-        />
-      </div>
-      <div className="mb-4">
-        <label className={tableClasses.formLabel}>Description</label>
-        <textarea
-          className={tableClasses.formInput}
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
-      </div>
-      <div className="mb-4">
-        <label className={tableClasses.formLabel}>Video URL</label>
-        <input
-          type="url"
-          className={tableClasses.formInput}
-          value={form.video_url}
-          onChange={(e) => setForm({ ...form, video_url: e.target.value })}
-        />
-      </div>
-      <button type="submit" className={tableClasses.formButton}>
-        {selectedExercise ? 'Update Exercise' : 'Add Exercise'}
-      </button>
-      {selectedExercise && (
-        <button type="button" className={tableClasses.cancelButton} onClick={onCancel}>
-          Cancel
+    <form onSubmit={handleFormSubmit} className={tableClasses.formContainer + " space-y-4"}>
+      <input
+        type="text"
+        className={`${tableClasses.formInput} w-full`}
+        value={form.title}
+        onChange={(e) => setForm({ ...form, title: e.target.value })}
+        placeholder="Title"
+        required
+      />
+      <input
+        type="text"
+        placeholder="Duration MM:SS"
+        className={`${tableClasses.formInput} w-full`}
+        value={form.duration}
+        onChange={handleDurationChange}
+        required
+      />
+      <input
+        type="url"
+        placeholder="Video URL"
+        className={`${tableClasses.formInput} w-full`}
+        value={form.video_url}
+        onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+      />
+      <textarea
+        className={`${tableClasses.formInput} w-full`}
+        value={form.description}
+        placeholder="Description"
+        onChange={(e) => setForm({ ...form, description: e.target.value })}
+        rows="3"
+      />
+      <div className="flex space-x-2">
+        <button
+          type="submit"
+          className={`${tableClasses.formButton} ${selectedExercise ? 'w-4/6' : 'w-full'}`}
+        >
+          {selectedExercise ? 'Update' : 'Add'} Exercise
         </button>
-      )}
+        {selectedExercise && (
+          <button
+            type="button"
+            onClick={resetForm}
+            className={`${tableClasses.formButton} w-2/6 flex items-center justify-center`}
+          >
+            <XCircle className="w-4 h-4" />
+          </button>
+        )}
+      </div>
     </form>
   );
 };

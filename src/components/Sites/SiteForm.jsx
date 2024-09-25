@@ -99,7 +99,7 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className={tableClasses.formContainer + " space-y-4"}>
+    <form onSubmit={handleSubmit} className={tableClasses.formContainer}>
       <input
         type="text"
         name="domainName"

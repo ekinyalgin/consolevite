@@ -287,8 +287,8 @@ const TodoPage = () => {
                     onClose={() => setNotification(null)}
                 />
             )}
-            <h1 className={tableClasses.h1}>Todos</h1>
             
+            <h1 className={tableClasses.h1}>Todos</h1>
             <div className="sm:space-x-8 flex flex-col md:flex-row">
                 {/* Form Section */}
                 <div ref={formRef} className="sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0">

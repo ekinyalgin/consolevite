@@ -13,7 +13,7 @@ const Layout = () => {
       </header>
       <main className="container mx-auto flex flex-1">
 
-        <section className="p-1 w-full mx-auto max-w-screen-lg">
+        <section className="p-1 w-full mx-auto max-w-screen-xl">
           
           <Outlet />
         </section>

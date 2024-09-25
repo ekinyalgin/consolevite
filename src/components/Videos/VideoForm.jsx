@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import tableClasses from '../../utils/tableClasses';
+import { XCircle } from 'lucide-react';
 
-const VideoForm = ({ fetchVideos, selectedVideo, showNotification }) => {
+const VideoForm = ({ fetchVideos, selectedVideo, showNotification, resetForm }) => {
     const [title, setTitle] = useState('');
     const [url, setUrl] = useState('');
     const [note, setNote] = useState('');
 
     useEffect(() => {
         if (selectedVideo) {
-            setTitle(selectedVideo.title || ''); // selectedVideo'daki title doğru bir şekilde set ediliyor mu?
-            setUrl(selectedVideo.url || ''); // url
-            setNote(selectedVideo.note || ''); // note
+            setTitle(selectedVideo.title || '');
+            setUrl(selectedVideo.url || '');
+            setNote(selectedVideo.note || '');
         } else {
-            // Eğer selectedVideo null ise, formu sıfırla
             setTitle('');
             setUrl('');
             setNote('');
@@ -33,14 +34,16 @@ const VideoForm = ({ fetchVideos, selectedVideo, showNotification }) => {
         };
 
         if (selectedVideo) {
-            videoData.done = selectedVideo.done; // Done değerini ekle
+            videoData.done = selectedVideo.done;
         }
 
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch(urlEndpoint, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(videoData),
             });
@@ -51,23 +54,26 @@ const VideoForm = ({ fetchVideos, selectedVideo, showNotification }) => {
                 setTitle('');
                 setUrl('');
                 setNote('');
+                resetForm();
             } else {
                 const errorData = await response.json();
-                showNotification(`Failed to update video: ${errorData.error}`, 'error');
+                showNotification(`Failed to ${selectedVideo ? 'update' : 'add'} video: ${errorData.error || 'Unknown error'}`, 'error');
             }
         } catch (error) {
-            showNotification('Failed to save video', 'error');
+            console.error('Error:', error);
+            showNotification(`Failed to ${selectedVideo ? 'update' : 'add'} video: ${error.message}`, 'error');
         }
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className={tableClasses.formContainer + " space-y-4"}>
             <input
                 type="text"
                 placeholder="Title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
+                className={`${tableClasses.formInput} w-full`}
             />
             <input
                 type="url"
@@ -75,14 +81,29 @@ const VideoForm = ({ fetchVideos, selectedVideo, showNotification }) => {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 required
+                className={`${tableClasses.formInput} w-full`}
             />
-            <input
-                type="text"
+            <textarea
                 placeholder="Note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
+                className={`${tableClasses.formInput} w-full`}
+                rows="3"
             />
-            <button type="submit">{selectedVideo ? 'Update' : 'Add'}</button>
+            <div className="flex space-x-2">
+                <button type="submit" className={`${tableClasses.formButton} ${selectedVideo ? 'w-4/6' : 'w-full'}`}>
+                    {selectedVideo ? 'Update' : 'Add'} Video
+                </button>
+                {selectedVideo && (
+                    <button
+                        type="button"
+                        onClick={resetForm}
+                        className={`${tableClasses.formButton} w-2/6 flex items-center justify-center`}
+                    >
+                        <XCircle className="w-4 h-4" />
+                    </button>
+                )}
+            </div>
         </form>
     );
 };

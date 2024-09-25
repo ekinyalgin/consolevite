@@ -9,29 +9,27 @@ const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification }) 
     const toggleDone = async (id, done) => {
         setTogglingDoneId(id);
     
-        // Güncellenecek video nesnesini bul
         const videoToUpdate = videos.find(video => video.id === id);
     
-        // Eğer video bulunamazsa işlem yapma
         if (!videoToUpdate) {
             showNotification('Video not found', 'error');
             return;
         }
     
         try {
-            // Güncelleme verisi
             const updatedVideoData = {
                 title: videoToUpdate.title,
                 url: videoToUpdate.url,
                 note: videoToUpdate.note,
-                done: done ? 0 : 1, // Mevcut done değerini tersine çevir
+                done: done ? 0 : 1,
             };
     
-            // Güncelleme isteği gönder
+            const token = localStorage.getItem('token');
             const response = await fetch(`${import.meta.env.VITE_API_URL}/videos/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(updatedVideoData),
             });
@@ -41,25 +39,30 @@ const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification }) 
                 showNotification('Video updated successfully', 'success');
             } else {
                 const errorData = await response.json();
-                showNotification(`Failed to update video: ${errorData.error}`, 'error');
+                showNotification(`Failed to update video: ${errorData.error || 'Unknown error'}`, 'error');
             }
         } catch (error) {
-            showNotification('Failed to update video', 'error');
+            showNotification(`Failed to update video: ${error.message}`, 'error');
         } finally {
-            setTogglingDoneId(null); // Animasyonun bitişi
+            setTogglingDoneId(null);
         }
     };
     
-
     const deleteVideo = async (id) => {
-        try {
-            await fetch(`${import.meta.env.VITE_API_URL}/videos/${id}`, {
-                method: 'DELETE',
-            });
-            fetchVideos();
-            showNotification('Video deleted successfully', 'success');
-        } catch (error) {
-            showNotification('Failed to delete video', 'error');
+        if (window.confirm('Are you sure you want to delete this video?')) {
+            try {
+                const token = localStorage.getItem('token');
+                await fetch(`${import.meta.env.VITE_API_URL}/videos/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                fetchVideos();
+                showNotification('Video deleted successfully', 'success');
+            } catch (error) {
+                showNotification('Failed to delete video', 'error');
+            }
         }
     };
 
@@ -67,15 +70,18 @@ const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification }) 
         setExpandedNoteId(expandedNoteId === id ? null : id);
     };
 
+    const truncateTitle = (title, maxLength = 60) => {
+        return title.length > maxLength ? title.substring(0, maxLength) + '...' : title;
+    };
+
     return (
         <table className={tableClasses.table}>
             <thead className={tableClasses.tableHeader}>
                 <tr>
                     <th className={tableClasses.tableHeader + " w-1/12"}>Done</th>
-                    <th className={tableClasses.tableHeader + " w-5/12 text-left px-2"}>Title</th>
-                    <th className={tableClasses.tableHeade + " w-1/12"}>Note</th>
-                    <th className={tableClasses.tableHeade + " w-1/12"}>Edit</th>
-                    <th className={tableClasses.tableHeade + " w-1/12"}>Delete</th>
+                    <th className={tableClasses.tableHeader + " w-6/12 text-left px-2"}>Title</th>
+                    <th className={tableClasses.tableHeader + " w-2/12"}>Note</th>
+                    <th className={tableClasses.tableHeader + " w-3/12"}>Actions</th>
                 </tr>
             </thead>
             <tbody className={tableClasses.tableBody}>
@@ -83,47 +89,45 @@ const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification }) 
                     <React.Fragment key={video.id}>
                         <tr className={tableClasses.tableRow}>
                             <td className={tableClasses.tableCell + " text-center"} onClick={() => toggleDone(video.id, video.done)}>
-                                <div
-                                    className={`transition-transform duration-300 ease-in-out ${
-                                        togglingDoneId === video.id ? "scale-75" : "scale-100"
-                                    }`}
-                                >
+                                <div className="flex justify-center items-center h-full">
                                     {video.done ? (
-                                       <Check className={tableClasses.checkIcon} strokeWidth={3} />
+                                        <Check className={tableClasses.checkIcon} strokeWidth={3} />
                                     ) : (
-                                        <Plus className={tableClasses.checkIcon} strokeWidth={3} />
+                                        <Check className={tableClasses.checkIconBlack} strokeWidth={3} />
                                     )}
                                 </div>
                             </td>
                             <td className={tableClasses.tableTitle}>
-                                <a href={video.url} target="_blank" rel="noopener noreferrer">
-                                    {video.title}
+                                <a href={video.url} target="_blank" rel="noopener noreferrer" title={video.title}>
+                                    {truncateTitle(video.title)}
                                 </a>
                             </td>
                             <td className={tableClasses.tableCell}>
-                                {video.note && (
-                                    <NotebookPen className={tableClasses.noteIcon} 
-                                        strokeWidth={2}
-                                        onClick={() => toggleNote(video.id)}
+                                <div className="flex justify-center items-center h-full">
+                                    {video.note && (
+                                        <NotebookPen className={tableClasses.noteIcon} 
+                                            strokeWidth={2}
+                                            onClick={() => toggleNote(video.id)}
+                                        />
+                                    )}
+                                </div>
+                            </td>
+                            <td className={tableClasses.tableCell}>
+                                <div className="flex items-center justify-center space-x-2 h-full">
+                                    <Edit
+                                        className={tableClasses.editIcon}
+                                        onClick={() => setSelectedVideo(video)}
                                     />
-                                )}
-                            </td>
-                            <td className={tableClasses.tableCell}>
-                                <Edit
-                                    className={tableClasses.editIcon}
-                                    onClick={() => setSelectedVideo(video)}
-                                />
-                            </td>
-                            <td className={tableClasses.tableCell}>
-                                <Trash2
-                                    className={tableClasses.deleteIcon}
-                                    onClick={() => deleteVideo(video.id)}
-                                />
+                                    <Trash2
+                                        className={tableClasses.deleteIcon}
+                                        onClick={() => deleteVideo(video.id)}
+                                    />
+                                </div>
                             </td>
                         </tr>
                         {expandedNoteId === video.id && (
                             <tr>
-                                <td colSpan="5" className={tableClasses.tableCellExpanded}>{video.note}</td>
+                                <td colSpan="4" className={tableClasses.tableCellExpanded}>{video.note}</td>
                             </tr>
                         )}
                     </React.Fragment>
