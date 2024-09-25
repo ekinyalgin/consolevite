@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import tableClasses from '../../utils/tableClasses';
-import { Check, XCircle, Edit, Trash2, Plus } from 'lucide-react';
+import { Check, XCircle, NotebookPen, Edit, Trash2, Plus } from 'lucide-react';
 
 const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification }) => {
     const [expandedNoteId, setExpandedNoteId] = useState(null);
@@ -71,39 +71,39 @@ const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification }) 
         <table className={tableClasses.table}>
             <thead className={tableClasses.tableHeader}>
                 <tr>
-                    <th className={tableClasses.tableHeaderCell}>Done</th>
-                    <th className={tableClasses.tableHeaderCell}>Title</th>
-                    <th className={tableClasses.tableHeaderCell}>Note</th>
-                    <th className={tableClasses.tableHeaderCell}>Edit</th>
-                    <th className={tableClasses.tableHeaderCell}>Delete</th>
+                    <th className={tableClasses.tableHeader + " w-1/12"}>Done</th>
+                    <th className={tableClasses.tableHeader + " w-5/12 text-left px-2"}>Title</th>
+                    <th className={tableClasses.tableHeade + " w-1/12"}>Note</th>
+                    <th className={tableClasses.tableHeade + " w-1/12"}>Edit</th>
+                    <th className={tableClasses.tableHeade + " w-1/12"}>Delete</th>
                 </tr>
             </thead>
             <tbody className={tableClasses.tableBody}>
                 {videos.map((video) => (
                     <React.Fragment key={video.id}>
                         <tr className={tableClasses.tableRow}>
-                            <td className={tableClasses.tableCell} onClick={() => toggleDone(video.id, video.done)}>
+                            <td className={tableClasses.tableCell + " text-center"} onClick={() => toggleDone(video.id, video.done)}>
                                 <div
                                     className={`transition-transform duration-300 ease-in-out ${
                                         togglingDoneId === video.id ? "scale-75" : "scale-100"
                                     }`}
                                 >
                                     {video.done ? (
-                                        <Check className={tableClasses.doneIcon} />
+                                       <Check className={tableClasses.checkIcon} strokeWidth={3} />
                                     ) : (
-                                        <XCircle className={tableClasses.notDoneIcon} />
+                                        <Plus className={tableClasses.checkIcon} strokeWidth={3} />
                                     )}
                                 </div>
                             </td>
-                            <td className={tableClasses.tableCell}>
-                                <a href={video.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                            <td className={tableClasses.tableTitle}>
+                                <a href={video.url} target="_blank" rel="noopener noreferrer">
                                     {video.title}
                                 </a>
                             </td>
                             <td className={tableClasses.tableCell}>
                                 {video.note && (
-                                    <Plus
-                                        className={tableClasses.noteIcon}
+                                    <NotebookPen className={tableClasses.noteIcon} 
+                                        strokeWidth={2}
                                         onClick={() => toggleNote(video.id)}
                                     />
                                 )}
@@ -123,7 +123,7 @@ const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification }) 
                         </tr>
                         {expandedNoteId === video.id && (
                             <tr>
-                                <td colSpan="5" className="bg-gray-100 p-4">{video.note}</td>
+                                <td colSpan="5" className={tableClasses.tableCellExpanded}>{video.note}</td>
                             </tr>
                         )}
                     </React.Fragment>

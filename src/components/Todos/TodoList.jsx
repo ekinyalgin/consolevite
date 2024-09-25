@@ -70,11 +70,11 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, notRevi
 
                                 </button>
                             </td>
-                            <td className="border-b border-gray-100 text-left text-sm px-2">{todo.title}</td>
+                            <td className={tableClasses.tableTitle}>{todo.title}</td>
                             <td className={tableClasses.tableCell}>
                                 {todo.note && (
                                     <button onClick={() => toggleNote(todo.id)} className={tableClasses.iconButton}>
-                                        <NotebookPen className="text-gray-600 hover:text-green-800 w-4" strokeWidth={2} />
+                                        <NotebookPen className={tableClasses.noteIcon} strokeWidth={2} />
                                     </button>
                                 )}
                             </td>

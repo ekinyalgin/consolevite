@@ -5,7 +5,7 @@ import ExerciseList from '../components/Exercises/ExerciseList';
 import { Plus, PlayCircle, Shuffle, X } from 'lucide-react';
 import Notification from '../utils/Notification';
 import { useNavigate } from 'react-router-dom';
-import tableClasses from '../utils/tableClasses'; // tableClasses dosyasını import ediyoruz
+import tableClasses from '../utils/tableClasses'; 
 
 const ExercisePage = () => {
   const [exercises, setExercises] = useState([]);
@@ -156,8 +156,8 @@ const ExercisePage = () => {
           onClose={() => setNotification(null)}
         />
       )}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className={tableClasses.title}>Exercises</h1>
+      <div className="container mx-auto p-2">
+        <h1 className={tableClasses.h1}>Exercises</h1>
         <button onClick={toggleForm} className={tableClasses.addButton}>
           <Plus className="mr-2" />
           {isFormOpen ? 'Close Form' : 'Add Exercise'}

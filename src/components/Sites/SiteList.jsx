@@ -203,9 +203,9 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
           {categories.map((category) => (
             <li key={category.id} className="mr-2">
               <button
-                className={`inline-block p-4 text-gray-400 font-semibold text-sm ${
+                className={`inline-block p-2 text-gray-400 font-semibold text-xs ${
                   activeCategory === category.name
-                    ? 'text-blue-600 border-b-2 text-black border-gray-600'
+                    ? 'text-gray-800 border-b-2 text-black border-gray-600'
                     : 'hover:text-gray-600 hover:border-gray-300'
                 }`}
                 onClick={() => setActiveCategory(category.name)}
@@ -219,7 +219,7 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
           className="text-gray-600 hover:text-blue-700"
           onClick={() => setShowBulkUpdate(!showBulkUpdate)}
         >
-          <Settings /> 
+          <Settings className="w-5"/> 
         </button>
       </div>
 
@@ -233,7 +233,7 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
 
       {/* Site Tablosu */}
       <table className={tableClasses.table}>
-        <thead className={tableClasses.tableHeaderRow}>
+        <thead className={tableClasses.tableHeader}>
         <tr>
             <th className={tableClasses.tableHeader + " w-1/12"}>Check</th>
             <th className={tableClasses.tableHeader + " w-3/12 text-left px-2"}>Domain Name</th>
@@ -253,7 +253,7 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
                   onChange={() => handleCheckboxChange(site)}
                 />
               </td>
-              <td className="border-b border-gray-100 text-left text-sm px-2">
+              <td className={tableClasses.tableTitle}>
               {site.hasNotReviewed ? (
                     <Link to={`/url-review/${site.domain_name}`} className={tableClasses.noteIcon}>
                       {site.domain_name}
@@ -293,10 +293,10 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
         </tbody>
       </table>
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-4 flex items-center space-x-4">
         <button 
           onClick={handleBulkDownload}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className={tableClasses.transButton}
         >
           Download Report
         </button>
@@ -304,9 +304,9 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
 
         <button 
           onClick={handleAddAllNewUrls}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          className={tableClasses.transButton}
         >
-          Add All New URLs from Excel Files
+          Add URLs
         </button>
       </div>
     </div>

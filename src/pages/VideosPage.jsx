@@ -3,8 +3,9 @@ import VideoForm from '../components/Videos/VideoForm';
 import VideoList from '../components/Videos/VideoList';
 import Notification from '../utils/Notification';
 import { XCircle } from 'lucide-react';
-import { AuthContext } from '../contexts/AuthContext'; // AuthContext'ten user ve loading state'ini al
+import { AuthContext } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import tableClasses from '../utils/tableClasses';
 
 const VideosPage = () => {
     const { user, loading } = useContext(AuthContext);
@@ -87,15 +88,17 @@ const VideosPage = () => {
     const filteredVideos = videos.filter(video => video.title.toLowerCase().includes(search.toLowerCase()));
 
     return (
-        <div>
+        <div className="container mx-auto p-2">
+
             {message && <Notification message={message.text} type={message.type} onClose={() => setMessage(null)} />}
             {loading ? (
                 <p>Loading...</p>
             ) : (
                 <>
-                    <h1>
+                          <h1 className={tableClasses.h1}>Videos</h1>
+
                         Videos <button onClick={toggleForm}>{isFormOpen ? '-' : '+'}</button>
-                    </h1>
+                    
                     {isFormOpen && (
                         <div>
                             <VideoForm fetchVideos={() => fetchVideos(true)} selectedVideo={selectedVideo} showNotification={showNotification} />
@@ -111,7 +114,7 @@ const VideosPage = () => {
                     <VideoList videos={filteredVideos} fetchVideos={() => fetchVideos(true)} setSelectedVideo={openEditForm} showNotification={showNotification} />
                     
                     {videos.length % limit === 0 && (
-                        <button onClick={() => fetchVideos()} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4">
+                        <button onClick={() => fetchVideos()} className={tableClasses.transButton + " mt-4"}>
                             Load More
                         </button>
                     )}

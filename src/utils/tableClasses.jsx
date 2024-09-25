@@ -13,12 +13,13 @@ export const tableClasses = {
   filterSelect: "p-2 shadow border border-gray-300 rounded",
   
   // Tablo
-  table: "bg-white w-full shadow-sm rounded-sm",
-  tableHeader: "bg-gray-50 text-xs font-semibold uppercase py-2 tracking-wider text-gray-400 border-b border-gray-100",
+  table: "bg-white w-full shadow-sm rounded",
+  tableHeader: "bg-gray-100 text-xs font-semibold uppercase py-2 text-gray-400 border-b border-gray-100",
   tableBody: "bg-white divide-y divide-gray-200",
   tableRow: "hover:bg-gray-50",
+  tableTitle: "border-b border-gray-100 text-left text-sm font-semibold px-2",
   //tableCell: "px-6 py-4 whitespace-nowrap text-sm text-gray-700",
-  tableCell: "border-b border-gray-100 h-10 text-center px-2 text-sm text-gray-700",
+  tableCell: "border-b border-gray-100 h-10 text-center px-2 text-xs text-gray-700",
   tableCellExpanded: "px-8 py-2 text-xs",
   
   // Action Buttons Container
@@ -27,12 +28,12 @@ export const tableClasses = {
   // İkon stilleri
   doneIcon: "text-green-500 cursor-pointer transition transform hover:scale-110 ease-in-out duration-300", // Done ikonu
   notDoneIcon: "text-gray-400 cursor-pointer transition transform hover:scale-110 ease-in-out duration-300", // Not Done ikonu
-  noteIcon: "text-blue-500 cursor-pointer transition transform hover:rotate-45 ease-in-out duration-300", // Note ikonu
   randomIcon: "text-purple-500 hover:text-pfformButtonurple-700 cursor-pointer transition transform hover:scale-110 ease-in-out duration-300", // Random video ikonu
+  noteIcon: "cursor-pointer text-gray-600 hover:text-green-800 w-4  transition transform hover:scale-110 ease-in-out duration-300",
   downloadIcon: "text-gray-500 hover:text-blue-600 w-4 transition transform hover:scale-110 ease-in-out duration-300", 
   editIcon: "text-blue-500 hover:text-blue-600 w-4 transition transform hover:scale-110 ease-in-out duration-300", 
   deleteIcon: "text-red-500 hover:text-red-600 w-4 transition transform hover:scale-110 ease-in-out duration-300",
-  checkIcon: "text-green-500 hover:text-green-600 pt-1 w-4 transition transform hover:scale-110 ease-in-out duration-300",
+  checkIcon: "cursor-pointer text-green-500 hover:text-green-600 pt-1 w-4 transition transform hover:scale-110 ease-in-out duration-300",
 
 
   // Form elemanları
@@ -41,6 +42,7 @@ export const tableClasses = {
   formInput: "shadow-sm bg-gray-50 rounded font-normal py-2 px-3 text-gray-500 leading-tight focus:outline-none transition text-sm",
   formButton: "bg-blue-500 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-4 py-2 rounded transition",
   cancelButton: "bg-gray-400 hover:bg-gray-700 text-white font-bold py-2 px-2 rounded flex items-center justify-center",
+  transButton: "bg-transparent border border-gray-500 text-black text-xs px-4 font-semibold py-2 rounded hover:bg-gray-600 hover:text-white transition",
   formDivider: "border-t border-gray-200 my-5",  
 
   // Pagination
