@@ -28,7 +28,7 @@ const BulkUpdateVisitors = ({ activeCategory, onNotification, onBulkUpdate }) =>
         headers: { Authorization: `Bearer ${token}` }
       });
       onNotification('Bulk update successful', 'success');
-      onBulkUpdate(response.data.updatedSites); // Update the site list after bulk update
+      onBulkUpdate(response.data.updatedSites); 
     } catch (error) {
       onNotification('Error during bulk update', 'error');
     }
@@ -37,14 +37,14 @@ const BulkUpdateVisitors = ({ activeCategory, onNotification, onBulkUpdate }) =>
   return (
     <form onSubmit={handleSubmit} className="my-6">
       <div className="flex space-x-1 text-xs sm:text-base sm:space-x-4">
-        <input type="number" name="minVisitors" placeholder="Min Visitors" value={bulkUpdateForm.minVisitors} onChange={handleInputChange} className="w-1/5 px-3 py-2 rounded font-semibold border border-gray-200 shadow-sm" required />
-        <input type="number" name="maxVisitors" placeholder="Max Visitors" value={bulkUpdateForm.maxVisitors} onChange={handleInputChange} className="w-1/5 px-3 py-2 rounded font-semibold border border-gray-200 shadow-sm" required />
-        <input type="number" name="changeValue" placeholder="Change Value" value={bulkUpdateForm.changeValue} onChange={handleInputChange} className="w-1/5 px-3 py-2 rounded font-semibold border border-gray-200 shadow-sm" required />
-        <select name="changeType" value={bulkUpdateForm.changeType} onChange={handleInputChange} className="w-1/5 px-3 py-2 rounded font-semibold border border-gray-200 shadow-sm">
+        <input type="number" name="minVisitors" placeholder="Min Visitors" value={bulkUpdateForm.minVisitors} onChange={handleInputChange} className={tableClasses.formInput + " w-1/5 bg-white"} required />
+        <input type="number" name="maxVisitors" placeholder="Max Visitors" value={bulkUpdateForm.maxVisitors} onChange={handleInputChange} className={tableClasses.formInput + " w-1/5 bg-white"} required />
+        <input type="number" name="changeValue" placeholder="Change Value" value={bulkUpdateForm.changeValue} onChange={handleInputChange} className={tableClasses.formInput + " w-1/5 bg-white"} required />
+        <select name="changeType" value={bulkUpdateForm.changeType} onChange={handleInputChange} className={tableClasses.formInput + " w-1/5 bg-white"}>
           <option value="decrease">Decrease</option>
           <option value="increase">Increase</option>
         </select>
-        <button type="submit" className="w-1/5 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
+        <button type="submit" className={tableClasses.transButton + " w-1/5 bg-white"}>
           Update
         </button>
       </div>
