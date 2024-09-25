@@ -68,13 +68,23 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Boş alanları kontrol et
+    if (!formData.domainName.trim() || !formData.monthlyVisitors || !formData.language || !formData.category) {
+      onNotification('All fields are required', 'error');
+      return;
+    }
+
     const submittedData = {
       id: initialData?.id,
-      domain_name: formData.domainName,
+      domain_name: formData.domainName.trim(),
       monthly_visitors: parseInt(formData.monthlyVisitors, 10),
       language: formData.language,
       category: formData.category
     };
+
+    console.log('Submitting data:', submittedData); // Debugging için
+
     onSubmit(submittedData);
   };
 

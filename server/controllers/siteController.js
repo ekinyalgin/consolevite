@@ -30,33 +30,48 @@ exports.getAllSites = async (req, res) => {
 };
 
 exports.createSite = async (req, res) => {
-  const { domainName, monthlyVisitors, language, category } = req.body;
+  const { domain_name, monthly_visitors, language, category } = req.body;
   try {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
       
+      // Tüm gerekli alanların dolu olduğunu kontrol et
+      if (!domain_name || !monthly_visitors || !language || !category) {
+        throw new Error('All fields are required');
+      }
+
+      // Sites tablosuna yeni site ekle
       const [result] = await connection.query(
-        'INSERT INTO sites (domain_name, monthly_visitors) VALUES (?, ?)',
-        [domainName, monthlyVisitors]
+        'INSERT INTO sites (domain_name, monthly_visitors, not_reviewed_pages, reviewed_pages) VALUES (?, ?, 0, 0)',
+        [domain_name, monthly_visitors]
       );
       const siteId = result.insertId;
 
-      if (language) {
+      // Dil ekle
+      const [langResult] = await connection.query('SELECT id FROM sites_langs WHERE name = ?', [language]);
+      if (langResult.length > 0) {
         await connection.query(
           'INSERT INTO site_languages (site_id, language_id) VALUES (?, ?)',
-          [siteId, language]
+          [siteId, langResult[0].id]
         );
+      } else {
+        throw new Error('Invalid language');
       }
-      if (category) {
+
+      // Kategori ekle
+      const [catResult] = await connection.query('SELECT id FROM sites_cats WHERE name = ?', [category]);
+      if (catResult.length > 0) {
         await connection.query(
           'INSERT INTO site_categories (site_id, category_id) VALUES (?, ?)',
-          [siteId, category]
+          [siteId, catResult[0].id]
         );
+      } else {
+        throw new Error('Invalid category');
       }
       
       await connection.commit();
-      res.status(201).json({ id: siteId, domainName, monthlyVisitors });
+      res.status(201).json({ id: siteId, domain_name, monthly_visitors, language, category });
     } catch (e) {
       await connection.rollback();
       throw e;
@@ -64,7 +79,7 @@ exports.createSite = async (req, res) => {
       connection.release();
     }
   } catch (err) {
-    console.error(err);
+    console.error('Error creating site:', err);
     res.status(500).json({ error: 'Server error', details: err.message });
   }
 };
