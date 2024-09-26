@@ -7,16 +7,13 @@ import { Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
-  const [sites, setSites] = useState([]);
+const SiteList = ({ sites, setSites, onNotification, onEditSite, refreshKey }) => {
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(localStorage.getItem('activeCategory') || null);
-  const [selectedSites, setSelectedSites] = useState([]); 
-  const [showBulkUpdate, setShowBulkUpdate] = useState(false); 
+  const [selectedSites, setSelectedSites] = useState([]);
+  const [showBulkUpdate, setShowBulkUpdate] = useState(false);
   const token = localStorage.getItem('token');
   const [languages, setLanguages] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingSite, setEditingSite] = useState(null);
   const [allSelected, setAllSelected] = useState(false);
 
   useEffect(() => {
@@ -24,11 +21,13 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
     fetchLanguages();
   }, []);
 
+
   useEffect(() => {
     if (activeCategory) {
       fetchSitesByCategory(activeCategory);
     }
   }, [activeCategory, refreshKey]);
+
 
   const fetchCategories = async () => {
     try {
@@ -43,6 +42,8 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
       onNotification('Error fetching categories', 'error');
     }
   };
+
+
 
   const fetchLanguages = async () => {
     try {
@@ -114,6 +115,7 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
     }
   };
 
+
   const handleCheckboxChange = (site) => {
     if (selectedSites.some(selected => selected.id === site.id)) {
       setSelectedSites(selectedSites.filter(selected => selected.id !== site.id));
@@ -163,17 +165,23 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this site?')) {
+      const originalSites = sites;
+      setSites(prevSites => prevSites.filter(site => site.id !== id));
+
       try {
         await axios.delete(`${API_URL}/sites/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         onNotification('Site deleted successfully', 'success');
-        fetchSitesByCategory(activeCategory);
       } catch (error) {
         onNotification('Error deleting site', 'error');
+        setSites(originalSites); // Hata durumunda listeyi geri yükleyin
       }
     }
   };
+
+
+
 
   const handleEditClick = (site) => {
     onEditSite(site);

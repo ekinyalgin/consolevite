@@ -1,5 +1,5 @@
 // Header.jsx
-import { useContext, useState } from "react";
+import { useContext, useState, useRef, useEffect } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import LoginModal from "./LoginModal";
 import { LogIn, LogOut, User, Menu, X } from "lucide-react";
@@ -10,6 +10,7 @@ const Header = () => {
   const [imageError, setImageError] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const headerRef = useRef(); // Added reference to Header
 
   const handleImageError = () => {
     setImageError(true);
@@ -19,8 +20,22 @@ const Header = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Close menu when clicking outside the Header
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (headerRef.current && !headerRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [headerRef]);
+
   return (
-    <header className="bg-gradient-to-r from-gray-900 to-gray-700 text-gray-100">
+    <header ref={headerRef} className="bg-gradient-to-r from-gray-900 to-gray-700 text-gray-100">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <span className="font-bold text-2xl text-white tracking-wide">Console</span>
@@ -57,18 +72,18 @@ const Header = () => {
           <>
             {user.role === 'admin' && (
               <div className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
-                <Link to="/todos" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Todos</Link>
-                <Link to="/sites" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Sites</Link>
-                <Link to="/inspire" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Inspire</Link>
-                <Link to="/exercises" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Exercises</Link>
-                <Link to="/production" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Production</Link>
+                <Link onClick={() => { setIsMenuOpen(false); }} to="/todos" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Todos</Link>
+                <Link onClick={() => { setIsMenuOpen(false); }} to="/sites" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Sites</Link>
+                <Link onClick={() => { setIsMenuOpen(false); }} to="/inspire" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Inspire</Link>
+                <Link onClick={() => { setIsMenuOpen(false); }} to="/exercises" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Exercises</Link>
+                <Link onClick={() => { setIsMenuOpen(false); }} to="/production" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Production</Link>
               </div>
             )}
             {user.role === 'emine' && (
-      <div className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
-        <Link to="/production" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Production</Link>
-      </div>
-    )}
+              <div className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
+                <Link onClick={() => { setIsMenuOpen(false); }} to="/production" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Production</Link>
+              </div>
+            )}
             <div className="flex items-center space-x-4 mt-4 md:mt-0">
               {!imageError ? (
                 <img

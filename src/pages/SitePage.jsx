@@ -8,6 +8,7 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const SitePage = () => {
+  const [sites, setSites] = useState([]); // `sites` ve `setSites` state'ini tanımlayın
   const [notification, setNotification] = useState(null);
   const [selectedSite, setSelectedSite] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -22,33 +23,42 @@ const SitePage = () => {
   }, []);
 
   const handleSiteAddedOrUpdated = async (siteData) => {
+    let tempId = `temp-${Math.random()}`; // Geçici bir ID oluştur
+
+    if (siteData.id) {
+        setSites((prevSites) => 
+            prevSites.map((site) => (site.id === siteData.id ? { ...site, ...siteData } : site))
+        );
+    } else {
+        setSites((prevSites) => [...prevSites, { ...siteData, id: tempId }]);
+    }
+
     try {
-      console.log('Received site data:', siteData);
+        const response = siteData.id 
+            ? await axios.put(`${API_URL}/sites/${siteData.id}`, siteData, { headers: { Authorization: `Bearer ${token}` }})
+            : await axios.post(`${API_URL}/sites`, siteData, { headers: { Authorization: `Bearer ${token}` }});
 
-      if (!siteData.domain_name || !siteData.monthly_visitors || !siteData.language || !siteData.category) {
-        throw new Error('All fields are required');
-      }
+        const savedSite = response.data;
+        setSites((prevSites) => 
+            prevSites.map((site) => (site.id === (siteData.id || tempId) ? savedSite : site))
+        );
 
-      if (siteData.id) {
-        const response = await axios.put(`${API_URL}/sites/${siteData.id}`, siteData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log('Update response:', response.data);
-        handleNotification('Site updated successfully', 'success');
-      } else {
-        const response = await axios.post(`${API_URL}/sites`, siteData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log('Add response:', response.data);
-        handleNotification('Site added successfully', 'success');
-      }
-      setSelectedSite(null);
-      refreshSiteList();
+        handleNotification(siteData.id ? 'Site updated successfully' : 'Site added successfully', 'success');
+        setSelectedSite(null);
     } catch (error) {
-      console.error('Error in handleSiteAddedOrUpdated:', error.response || error);
-      handleNotification(`Error: ${error.response?.data?.message || error.message}`, 'error');
+        console.error('Error in handleSiteAddedOrUpdated:', error.response || error);
+        handleNotification(`Error: ${error.response?.data?.message || error.message}`, 'error');
+
+        setSites((prevSites) => {
+            if (siteData.id) {
+                return prevSites.map((site) => (site.id === siteData.id ? siteData : site));
+            } else {
+                return prevSites.filter((site) => site.id !== tempId);
+            }
+        });
     }
   };
+
 
   const handleEditSite = (site) => {
     setSelectedSite(site);
@@ -76,6 +86,8 @@ const SitePage = () => {
         </div>
         <div className="lg:w-9/12">
           <SiteList 
+            sites={sites} // `sites` ve `setSites` burada kullanıma sunulmalı
+            setSites={setSites} // `setSites` fonksiyonunu `SiteList`'e geçirin
             onNotification={handleNotification} 
             onEditSite={handleEditSite} 
             onBulkUpdate={(updatedSites) => {

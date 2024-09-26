@@ -40,12 +40,18 @@ const ExerciseForm = ({ selectedExercise, onSave, onCancel }) => {
 
     const urlPattern = /^(https?:\/\/)([\w\d-]+\.)+[\w\d]{2,}(\/.*)?$/;
     if (form.video_url && !urlPattern.test(form.video_url)) {
-      alert("Please enter a valid URL.");
-      return;
+        alert("Please enter a valid URL.");
+        return;
+    }
+
+    // selectedExercise'nin ID'sini form objesine ekle
+    if (selectedExercise && selectedExercise.id) {
+        form.id = selectedExercise.id;
     }
 
     onSave(form);
-  };
+};
+
 
   const resetForm = () => {
     setForm({ title: '', duration: '', description: '', video_url: '' });

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import tableClasses from '../../utils/tableClasses';
+import { Trash2 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -58,39 +59,49 @@ const CategoryPopup = ({ onClose, onNotification, onCategoryChange }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-md w-96">
-        <h2 className="text-xl font-bold mb-4">Manage Categories</h2>
-        <div className="mb-4">
-          <input
-            type="text"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            className={tableClasses.formInput}
-            placeholder="Enter new category"
-          />
-          <button onClick={handleAddCategory} className={`${tableClasses.formButton} mt-2`}>
-            Add Category
-          </button>
-        </div>
-        <ul className="mb-4">
-          {categories.map((cat) => (
-            <li key={cat.id} className="flex justify-between items-center border-b py-2">
-              {cat.name}
-              <button
-                onClick={() => handleDeleteCategory(cat.id)}
-                className={tableClasses.deleteIcon}
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-        <button onClick={onClose} className={tableClasses.cancelButton}>
-          Close
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+    <div className="bg-white p-6 rounded-xl shadow-xl w-96 transform transition-all duration-300 scale-100">
+      <h2 className="text-2xl font-semibold text-gray-700 mb-4 text-center">Manage Categories</h2>
+  
+      <div className="flex flex-col mb-4">
+        <input
+          type="text"
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          className="w-full p-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Enter new category"
+        />
+        <button
+          onClick={handleAddCategory}
+          className="mt-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition duration-200 shadow-md hover:shadow-lg"
+        >
+          Add Category
         </button>
       </div>
+  
+      <ul className="max-h-40 overflow-y-auto border-t border-b border-gray-200 divide-y divide-gray-200 mb-4">
+        {categories.map((cat) => (
+          <li key={cat.id} className="flex justify-between items-center py-2 px-1 hover:bg-gray-100 transition-colors">
+            <span className="text-gray-700 px-2">{cat.name}</span>
+            <button
+              onClick={() => handleDeleteCategory(cat.id)}
+              className="text-red-500 hover:text-red-700 transition-colors px-2"
+            >
+              <Trash2 className={tableClasses.deleteIcon} strokeWidth={2} />
+            </button>
+          </li>
+        ))}
+      </ul>
+  
+      <button
+        onClick={onClose}
+        className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-md transition duration-200"
+      >
+        Close
+      </button>
     </div>
+  </div>
+  
   );
 };
 

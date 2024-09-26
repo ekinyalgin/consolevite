@@ -39,49 +39,91 @@ const ExercisePage = () => {
   };
 
   const handleSave = async (exerciseData) => {
-    try {
-      const token = localStorage.getItem('token');
-      let response;
-
-      if (exerciseData.id) {
-        response = await axios.put(`${API_URL}/exercises/${exerciseData.id}`, exerciseData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setExercises(prevExercises => prevExercises.map(exercise => 
-          exercise.id === exerciseData.id ? response.data : exercise
-        ));
-      } else {
-        response = await axios.post(`${API_URL}/exercises`, exerciseData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setExercises(prevExercises => [...prevExercises, response.data]);
-      }
-
-      showNotification(exerciseData.id ? 'Exercise updated successfully' : 'Exercise added successfully', 'success');
-      setSelectedExercise(null);
-    } catch (error) {
-      console.error('Error saving exercise:', error);
-      showNotification('Failed to save exercise', 'error');
+    let tempId = `temp-${Math.random()}`; // Geçici bir ID oluştur
+    if (exerciseData.id) {
+        // Mevcut bir egzersizi optimistik olarak güncelle
+        setExercises(prevExercises => 
+            prevExercises.map(exercise => 
+                exercise.id === exerciseData.id ? { ...exercise, ...exerciseData } : exercise
+            )
+        );
+    } else {
+        // Yeni egzersizi optimistik olarak ekle
+        setExercises(prevExercises => [...prevExercises, { ...exerciseData, id: tempId }]);
     }
-  };
 
-  const handleDelete = async (id) => {
     try {
+        const token = localStorage.getItem('token');
+        let response;
+
+        if (exerciseData.id) {
+            response = await axios.put(`${API_URL}/exercises/${exerciseData.id}`, exerciseData, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+        } else {
+            response = await axios.post(`${API_URL}/exercises`, exerciseData, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+        }
+
+        const savedExercise = response.data;
+
+        // Sunucu yanıtı geldiğinde optimistik güncellemeyi kesinleştir
+        setExercises(prevExercises => prevExercises.map(exercise => 
+            exercise.id === (exerciseData.id || tempId) ? savedExercise : exercise
+        ));
+
+        showNotification(exerciseData.id ? 'Exercise updated successfully' : 'Exercise added successfully', 'success');
+        setSelectedExercise(null);
+    } catch (error) {
+        console.error('Error saving exercise:', error);
+        showNotification('Failed to save exercise', 'error');
+
+        // Hata durumunda optimistik değişiklikleri geri al
+        setExercises(prevExercises => {
+            if (exerciseData.id) {
+                return prevExercises.map(exercise => 
+                    exercise.id === exerciseData.id ? exerciseData : exercise
+                );
+            } else {
+                return prevExercises.filter(exercise => exercise.id !== tempId);
+            }
+        });
+    }
+};
+
+
+const handleDelete = async (id) => {
+  // Silme işlemi için onay mesajı
+  const isConfirmed = window.confirm("Bu egzersizi silmek istediğinize emin misiniz?");
+  if (!isConfirmed) {
+      return; // Kullanıcı iptal ettiyse işlemi sonlandır
+  }
+
+  // Egzersizi optimistik olarak hemen UI'dan kaldır
+  const originalExercises = exercises;
+  setExercises(prevExercises => prevExercises.filter(exercise => exercise.id !== id));
+
+  try {
       const token = localStorage.getItem('token');
       await axios.delete(`${API_URL}/exercises/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
       });
-      setExercises(prevExercises => prevExercises.filter(exercise => exercise.id !== id));
       showNotification('Exercise deleted successfully', 'success');
-    } catch (error) {
+  } catch (error) {
       console.error('Error deleting exercise:', error);
       showNotification('Failed to delete exercise', 'error');
-    }
-  };
 
-  const handleEdit = (exercise) => {
-    setSelectedExercise(exercise);
-  };
+      // Hata durumunda egzersizi geri ekle
+      setExercises(originalExercises);
+  }
+};
+
+
+
+const handleEdit = (exercise) => {
+  setSelectedExercise(exercise); 
+};
 
   const startRandomExercise = () => {
     if (exercises.length > 0) {
