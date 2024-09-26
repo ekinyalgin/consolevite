@@ -59,10 +59,16 @@ const Header = () => {
               <div className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
                 <Link to="/todos" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Todos</Link>
                 <Link to="/sites" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Sites</Link>
-                <Link to="/videos" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Videos</Link>
+                <Link to="/inspire" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Inspire</Link>
                 <Link to="/exercises" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Exercises</Link>
+                <Link to="/production" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Production</Link>
               </div>
             )}
+            {user.role === 'emine' && (
+      <div className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
+        <Link to="/production" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Production</Link>
+      </div>
+    )}
             <div className="flex items-center space-x-4 mt-4 md:mt-0">
               {!imageError ? (
                 <img

@@ -275,7 +275,7 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
               </td>
               <td className={tableClasses.tableTitle}>
               {site.hasNotReviewed ? (
-                    <Link to={`/url-review/${site.domain_name}`} className={tableClasses.noteIcon}>
+                    <Link to={`/url-review/${site.domain_name}`} className="underline">
                       {site.domain_name}
                     </Link>
                   ) : (
@@ -300,6 +300,15 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
                     <Trash2 className={tableClasses.deleteIcon} strokeWidth={2}  />
                   </button>
                 </div>
+              </td>
+              <td className={tableClasses.tableCell}>
+                {Array.isArray(site.links) ? (
+                  site.links.map((link, index) => (
+                    <span key={index}>{link}</span>
+                  ))
+                ) : (
+                  <span>{site.links || 'No links'}</span>
+                )}
               </td>
             </tr>
           ))}

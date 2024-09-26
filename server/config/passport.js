@@ -4,6 +4,11 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const passport = require("passport");
 const jwt = require('jsonwebtoken');
 const db = require('./db');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env.production') });
+
+console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID);
+console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET);
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;

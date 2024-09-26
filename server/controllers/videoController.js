@@ -5,9 +5,12 @@ exports.getVideos = async (req, res) => {
     const offset = parseInt(req.query.offset) || 0; // Varsayılan olarak 0
 
     try {
+        console.log('Fetching videos:', { limit, offset });
         const [rows] = await db.query('SELECT * FROM videos ORDER BY done DESC, id DESC LIMIT ? OFFSET ?', [limit, offset]);
+        console.log('Fetched videos:', rows.length);
         res.json(rows);
     } catch (error) {
+        console.error('Error fetching videos:', error);
         res.status(500).json({ error: error.message });
     }
 };

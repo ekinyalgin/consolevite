@@ -1,39 +1,25 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ExerciseForm from '../components/Exercises/ExerciseForm';
 import ExerciseList from '../components/Exercises/ExerciseList';
 import { PlayCircle, Shuffle, X } from 'lucide-react';
 import Notification from '../utils/Notification';
 import tableClasses from '../utils/tableClasses';
-import { AuthContext } from '../contexts/AuthContext';
-import { LoaderCircle } from 'lucide-react';
 import axios from 'axios';
 
 const ExercisePage = () => {
-  const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [pageState, setPageState] = useState('loading');
   const [exercises, setExercises] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [notification, setNotification] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [showOnlySelected, setShowOnlySelected] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        setPageState('unauthorized');
-      } else if (user.role !== 'admin') {
-        setPageState('forbidden');
-      } else {
-        setPageState('loading');
-        fetchExercises();
-      }
-    }
-  }, [user, loading]);
+    fetchExercises();
+  }, []);
 
   const fetchExercises = useCallback(async () => {
     try {
@@ -42,11 +28,9 @@ const ExercisePage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setExercises(response.data);
-      setPageState('loaded');
     } catch (error) {
       console.error('Error fetching exercises:', error);
       showNotification('Failed to load exercises', 'error');
-      setPageState('error');
     }
   }, [API_URL]);
 
@@ -140,41 +124,6 @@ const ExercisePage = () => {
     const selectedExercises = exercises.filter((exercise) => selectedIds.includes(exercise.id));
     navigate('/start-exercise', { state: { exercises: selectedExercises } });
   };
-
-  if (pageState === 'loading') {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <LoaderCircle className="animate-spin text-blue-500" size={48} />
-      </div>
-    );
-  }
-
-  if (pageState === 'unauthorized') {
-    return (
-      <div className="container mx-auto p-4">
-        <h1 className={tableClasses.h1}>Access Denied</h1>
-        <p>Please log in to view this page.</p>
-      </div>
-    );
-  }
-
-  if (pageState === 'forbidden') {
-    return (
-      <div className="container mx-auto p-4">
-        <h1 className={tableClasses.h1}>Unauthorized Access</h1>
-        <p>Sorry, you don't have permission to view this page. Only administrators can access the Exercises list.</p>
-      </div>
-    );
-  }
-
-  if (pageState === 'error') {
-    return (
-      <div className="container mx-auto p-4">
-        <h1 className={tableClasses.h1}>Error</h1>
-        <p>An error occurred while loading the page. Please try again later.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto p-2">
