@@ -76,41 +76,62 @@ const UrlReview = () => {
   };
 
   const handleReviewToggle = async (id, currentReviewStatus) => {
+    // Find the URL object to be updated
+    const urlToUpdate = currentReviewStatus
+      ? reviewedUrls.find(url => url.id === id)
+      : notReviewedUrls.find(url => url.id === id);
+  
+    // Optimistically update the UI
+    const updatedUrl = { ...urlToUpdate, reviewed: !currentReviewStatus };
+    if (currentReviewStatus) {
+      setReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+      setNotReviewedUrls(prevUrls => [...prevUrls, updatedUrl]);
+    } else {
+      setNotReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+      setReviewedUrls(prevUrls => [...prevUrls, updatedUrl]);
+    }
+  
     try {
       const response = await axios.put(`${API_URL}/urls/${id}/review`, 
         { reviewed: !currentReviewStatus }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      const updatedUrl = response.data.updatedUrl;
-      
-      if (currentReviewStatus) {
-        setReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
-        setNotReviewedUrls(prevUrls => [...prevUrls, updatedUrl]);
-      } else {
-        setNotReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
-        setReviewedUrls(prevUrls => [...prevUrls, updatedUrl]);
-      }
-
+  
       setNotification({ message: 'URL review status updated successfully', type: 'success' });
     } catch (error) {
       console.error('Error updating URL review status:', error);
       setNotification({ message: 'Error updating URL review status', type: 'error' });
+  
+      // Revert the UI to its previous state
+      if (currentReviewStatus) {
+        setNotReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+        setReviewedUrls(prevUrls => [...prevUrls, urlToUpdate]);
+      } else {
+        setReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+        setNotReviewedUrls(prevUrls => [...prevUrls, urlToUpdate]);
+      }
     }
   };
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this URL?')) {
+      // Optimistically update the UI
+      const prevNotReviewedUrls = notReviewedUrls;
+      const prevReviewedUrls = reviewedUrls;
+      setNotReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+      setReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
+
       try {
         await axios.delete(`${API_URL}/urls/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        // URL'yi ilgili listeden kaldır
-        setNotReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
-        setReviewedUrls(prevUrls => prevUrls.filter(url => url.id !== id));
         setNotification({ message: 'URL deleted successfully', type: 'success' });
       } catch (error) {
         setNotification({ message: 'Error deleting URL', type: 'error' });
+
+        // Revert the UI to its previous state
+        setNotReviewedUrls(prevNotReviewedUrls);
+        setReviewedUrls(prevReviewedUrls);
       }
     }
   };
@@ -224,7 +245,7 @@ const UrlReview = () => {
     <MoveLeft className='text-black w-5 h-5' />
   </div>
   </a>
-  <h1 className={`${tableClasses.h1} ml-4 mb-0`}>{`URL Review for ${domainName || 'Unknown Domain'}`}</h1>
+  <h1 className={`${tableClasses.h1} ml-4 !mb-0`}>{`URL Review for ${domainName || 'Unknown Domain'}`}</h1>
 </div>
 
 
@@ -323,15 +344,18 @@ const UrlReview = () => {
                     </button>
                   </td>
                   <td className={tableClasses.tableCell}>
-                    <ChartNoAxesGantt className={tableClasses.chartIcon} strokeWidth={3} />
+                  <a 
+  href={`https://sr.toolsminati.com/analytics/organic/overview/?db=us&q=${url.url}&searchType=subfolder`} 
+  target="_blank" 
+  rel="noopener noreferrer"
+>
+  <ChartNoAxesGantt className={tableClasses.chartIcon} strokeWidth={3} />
+</a>
+
                   </td>
                   <td className={tableClasses.tableTitle}>
-
-    <a href={url.url} target="_blank" rel="noopener noreferrer">{formatUrl(url.url)}
-
-    </a>
-
-</td>
+                      <a href={url.url} target="_blank" rel="noopener noreferrer">{formatUrl(url.url)}</a>
+                  </td>
                   <td className={tableClasses.tableCell}>
                     <button onClick={() => handleDelete(url.id)} className={tableClasses.deleteIcon}>
                     <Trash2 className={tableClasses.deleteIcon} strokeWidth={2} />
@@ -373,7 +397,13 @@ const UrlReview = () => {
                       </button>
                     </td>
                     <td className={tableClasses.tableCell}>
-                    <ChartNoAxesGantt className={tableClasses.chartIcon} strokeWidth={3} />
+                    <a 
+  href={`https://sr.toolsminati.com/analytics/organic/overview/?db=us&q=${url.url}&searchType=subfolder`} 
+  target="_blank" 
+  rel="noopener noreferrer"
+>
+  <ChartNoAxesGantt className={tableClasses.chartIcon} strokeWidth={3} />
+</a>
                     </td>
                     <td className={tableClasses.tableTitle}>
                       <a href={url.url} target="_blank" rel="noopener noreferrer">
