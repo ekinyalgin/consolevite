@@ -35,6 +35,7 @@ export const tableClasses = {
   editIcon: "cursor-pointer text-blue-500 hover:text-blue-600 w-4 transition transform hover:scale-110 ease-in-out duration-300", 
   deleteIcon: "cursor-pointer text-red-500 hover:text-red-600 w-4 transition transform hover:scale-110 ease-in-out duration-300",
   checkIcon: "cursor-pointer text-green-500 hover:text-green-600 pt-1 w-4 transition transform hover:scale-110 ease-in-out duration-300",
+  chartIcon: "cursor-pointer text-orange-600 hover:text-orange-700 pt-1 w-4 transition transform hover:scale-110 ease-in-out duration-300 mx-auto",
   checkIconBlack: "cursor-pointer text-black hover:text-green-600 pt-1 w-4 transition transform hover:scale-110 ease-in-out duration-300",
 
 

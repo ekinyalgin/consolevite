@@ -49,7 +49,7 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, notRevi
     return (
         <div className="overflow-x-auto w-full">
         <table className={tableClasses.table}>
-            <thead className={tableClasses.tableHeaderRow}>
+            <thead className={tableClasses.tableHeader}>
                 <tr>
                     <th className={tableClasses.tableHeader + " w-1/12"}>Done</th>
                     <th className={tableClasses.tableHeader + " w-3/12 text-left px-2"}>Title</th>

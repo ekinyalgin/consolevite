@@ -3,9 +3,14 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import tableClasses from '../../utils/tableClasses';
 import Notification from '../../utils/Notification';
-import { CheckSquare, Trash2, BarChart2, Check } from 'lucide-react';
+import { ChartNoAxesGantt, MoveLeft, Trash2, BarChart2, Check } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+// Add this helper function at the top of the file, outside of the component
+const formatUrl = (url) => {
+  return url.replace(/^(https?:\/\/)?(www\.)?/, '');
+};
 
 const UrlReview = () => {
   const { domainName } = useParams();
@@ -110,6 +115,7 @@ const UrlReview = () => {
     }
   };
 
+
   const fetchExcelUrls = async () => {
     try {
       if (!token) {
@@ -211,8 +217,16 @@ const UrlReview = () => {
   };
 
   return (
-    <div className="container mx-auto mt-10 px-4">
-      <h1 className="text-2xl font-bold mb-6">{`URL Review for ${domainName || 'Unknown Domain'}`}</h1>
+    <div className="overflow-x-auto w-full">
+      <div className='flex items-center mb-6'>
+      <a href="/sites">
+  <div className='hover:bg-gray-200 rounded-full p-2 flex items-center justify-center'>
+    <MoveLeft className='text-black w-5 h-5' />
+  </div>
+  </a>
+  <h1 className={`${tableClasses.h1} ml-4 mb-0`}>{`URL Review for ${domainName || 'Unknown Domain'}`}</h1>
+</div>
+
 
       {notification && (
         <Notification
@@ -225,35 +239,39 @@ const UrlReview = () => {
       {domainName && (
         <>
           <button
-            className="text-blue-500 hover:text-blue-700 mb-4"
+            className={tableClasses.transButton}
             onClick={() => {
               setShowExcelContent(!showExcelContent);
               if (!showExcelContent) fetchExcelUrls();
             }}
           >
-            {showExcelContent ? 'Hide Excel Content' : 'Show Excel Content'}
+            {showExcelContent ? 'Hide Excel URLs' : 'Show Excel URLs'}
           </button>
 
           {showExcelContent && (
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-2">Excel URLs (Not in Database)</h2>
+            <div>
+            <div className="flex space-x-2 my-4">
+
               <button
-                className="mb-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                className={tableClasses.transButton}
                 onClick={toggleAllExcelUrls}
               >
                 {selectedExcelUrls.length === excelUrls.length ? 'Deselect All' : 'Select All'}
               </button>
               <button
-                className="mb-2 ml-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                className={tableClasses.formButton}
                 onClick={handleAddAllUrls}
               >
                 Select All and Add to Database
               </button>
+
+              </div>
+              
               <table className={tableClasses.table}>
-                <thead className={tableClasses.tableHeader}>
+              <thead className={tableClasses.tableHeader}>
                   <tr>
-                    <th className={tableClasses.tableHeaderCell}>Select</th>
-                    <th className={tableClasses.tableHeaderCell}>URL</th>
+                    <th className={tableClasses.tableHeader + " w-1/6"}>Select</th>
+                    <th className={tableClasses.tableHeader + " w-5/6"}>URL</th>
                   </tr>
                 </thead>
                 <tbody className={tableClasses.tableBody}>
@@ -277,7 +295,7 @@ const UrlReview = () => {
               </table>
               {excelUrls.length > 0 && (
                 <button
-                  className="mt-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                  className={tableClasses.transButton}
                   onClick={handleAddSelectedUrls}
                 >
                   Add Selected URLs
@@ -286,31 +304,37 @@ const UrlReview = () => {
             </div>
           )}
 
-          <h2 className="text-lg font-semibold mb-2">Not Reviewed Pages</h2>
+          <h2 className={tableClasses.h2 + " mt-4"}>Not Reviewed Pages</h2>
           <table className={tableClasses.table}>
             <thead className={tableClasses.tableHeader}>
               <tr>
-                <th className={tableClasses.tableHeaderCell}>DONE</th>
-                <th className={tableClasses.tableHeaderCell}>SEMRUSH</th>
-                <th className={tableClasses.tableHeaderCell}>URL</th>
-                <th className={tableClasses.tableHeaderCell}>DELETE</th>
+                <th className={tableClasses.tableHeader + " w-1/12"}>Done</th>
+                <th className={tableClasses.tableHeader + " w-1/12"}>Semrush</th>
+                <th className={tableClasses.tableHeader + " w-8/12 text-left px-2"}>URL</th>
+                <th className={tableClasses.tableHeader + " w-2/12"}>Delete</th>
               </tr>
             </thead>
             <tbody className={tableClasses.tableBody}>
               {notReviewedUrls.length > 0 ? notReviewedUrls.map((url) => (
                 <tr key={url.id} className={tableClasses.tableRow}>
                   <td className={tableClasses.tableCell}>
-                    <button onClick={() => handleReviewToggle(url.id, false)} className="text-gray-500 hover:text-green-500">
-                      <CheckSquare />
+                    <button onClick={() => handleReviewToggle(url.id, false)}>
+                    <Check className={tableClasses.checkIcon} strokeWidth={3} />
                     </button>
                   </td>
                   <td className={tableClasses.tableCell}>
-                    <BarChart2 />
+                    <ChartNoAxesGantt className={tableClasses.chartIcon} strokeWidth={3} />
                   </td>
-                  <td className={tableClasses.tableCell}>{url.url}</td>
+                  <td className={tableClasses.tableTitle}>
+
+    <a href={url.url} target="_blank" rel="noopener noreferrer">{formatUrl(url.url)}
+
+    </a>
+
+</td>
                   <td className={tableClasses.tableCell}>
                     <button onClick={() => handleDelete(url.id)} className={tableClasses.deleteIcon}>
-                      <Trash2 />
+                    <Trash2 className={tableClasses.deleteIcon} strokeWidth={2} />
                     </button>
                   </td>
                 </tr>
@@ -322,9 +346,9 @@ const UrlReview = () => {
             </tbody>
           </table>
 
-          <h2 className="text-lg font-semibold mb-2 mt-4">Reviewed Pages</h2>
+          <h2 className={tableClasses.h2 + " mt-4"}>Reviewed Pages</h2>
           <button
-            className="text-blue-500 hover:text-blue-700 mb-2"
+            className={tableClasses.transButton + " mb-6"}
             onClick={() => setShowReviewed(!showReviewed)}
           >
             {showReviewed ? 'Hide Reviewed' : 'Show Reviewed'}
@@ -334,27 +358,31 @@ const UrlReview = () => {
             <table className={tableClasses.table}>
               <thead className={tableClasses.tableHeader}>
                 <tr>
-                  <th className={tableClasses.tableHeaderCell}>DONE</th>
-                  <th className={tableClasses.tableHeaderCell}>SEMRUSH</th>
-                  <th className={tableClasses.tableHeaderCell}>URL</th>
-                  <th className={tableClasses.tableHeaderCell}>DELETE</th>
+                <th className={tableClasses.tableHeader + " w-1/12"}>Done</th>
+                <th className={tableClasses.tableHeader + " w-1/12"}>Semrush</th>
+                <th className={tableClasses.tableHeader + " w-8/12 text-left px-2"}>URL</th>
+                <th className={tableClasses.tableHeader + " w-2/12"}>Delete</th>
                 </tr>
               </thead>
               <tbody className={tableClasses.tableBody}>
                 {reviewedUrls.length > 0 ? reviewedUrls.map((url) => (
                   <tr key={url.id} className={tableClasses.tableRow}>
                     <td className={tableClasses.tableCell}>
-                      <button onClick={() => handleReviewToggle(url.id, true)} className="text-green-500 hover:text-gray-500">
-                        <Check />
+                      <button onClick={() => handleReviewToggle(url.id, true)}>
+                      <Check className={tableClasses.checkIcon} strokeWidth={3} />
                       </button>
                     </td>
                     <td className={tableClasses.tableCell}>
-                      <BarChart2 />
+                    <ChartNoAxesGantt className={tableClasses.chartIcon} strokeWidth={3} />
                     </td>
-                    <td className={tableClasses.tableCell}>{url.url}</td>
+                    <td className={tableClasses.tableTitle}>
+                      <a href={url.url} target="_blank" rel="noopener noreferrer">
+                        {formatUrl(url.url)}
+                      </a>
+                    </td>
                     <td className={tableClasses.tableCell}>
-                      <button onClick={() => handleDelete(url.id)} className={tableClasses.deleteIcon}>
-                        <Trash2 />
+                      <button onClick={() => handleDelete(url.id)}>
+                      <Trash2 className={tableClasses.deleteIcon} strokeWidth={2} />
                       </button>
                     </td>
                   </tr>

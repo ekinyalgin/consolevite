@@ -258,8 +258,8 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
             </th>
             <th className={tableClasses.tableHeader + " w-3/12 text-left px-2"}>Domain Name</th>
             <th className={tableClasses.tableHeader + " w-2/12"}>Monthly</th>
-            <th className={tableClasses.tableHeader + " w-2/12"}>Language</th>
-            <th className={tableClasses.tableHeader + " w-2/12"}>Download</th>
+            <th className={tableClasses.tableHeader + " w-2/12"}>Lang</th>
+            <th className={tableClasses.tableHeader + " w-2/12"}>DL</th>
             <th className={tableClasses.tableHeader + " w-2/12"}>Actions</th>
           </tr>
         </thead>
@@ -300,15 +300,6 @@ const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
                     <Trash2 className={tableClasses.deleteIcon} strokeWidth={2}  />
                   </button>
                 </div>
-              </td>
-              <td className={tableClasses.tableCell}>
-                {Array.isArray(site.links) ? (
-                  site.links.map((link, index) => (
-                    <span key={index}>{link}</span>
-                  ))
-                ) : (
-                  <span>{site.links || 'No links'}</span>
-                )}
               </td>
             </tr>
           ))}
