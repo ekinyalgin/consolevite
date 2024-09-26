@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import tableClasses from '../../utils/tableClasses';
 import { XCircle } from 'lucide-react';
 
-const VideoForm = ({ fetchVideos, selectedVideo, showNotification, resetForm }) => {
+const VideoForm = ({ fetchVideos, selectedVideo, showNotification, resetForm, setVideos, videos }) => {
     const [title, setTitle] = useState('');
     const [url, setUrl] = useState('');
     const [note, setNote] = useState('');
@@ -18,6 +18,7 @@ const VideoForm = ({ fetchVideos, selectedVideo, showNotification, resetForm }) 
             setNote('');
         }
     }, [selectedVideo]);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -37,6 +38,17 @@ const VideoForm = ({ fetchVideos, selectedVideo, showNotification, resetForm }) 
             videoData.done = selectedVideo.done;
         }
 
+        let tempId = `temp-${Math.random()}`; // Geçici bir ID oluştur
+
+        // Optimistik güncelleme: UI'ya hemen ekle veya güncelle
+        if (!selectedVideo) {
+            setVideos([...videos, { ...videoData, id: tempId }]); // Yeni video ekliyoruz
+        } else {
+            setVideos(videos.map(video => 
+                video.id === selectedVideo.id ? { ...video, ...videoData } : video
+            )); // Güncelleme yapıyoruz
+        }
+
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(urlEndpoint, {
@@ -49,21 +61,36 @@ const VideoForm = ({ fetchVideos, selectedVideo, showNotification, resetForm }) 
             });
 
             if (response.ok) {
-                fetchVideos();
+                const savedVideo = await response.json();
+                
+                // Sunucu yanıtı geldiğinde optimistik güncellemeyi kesinleştir
+                setVideos(prevVideos => prevVideos.map(video => 
+                    video.id === tempId ? savedVideo : video // Yeni eklenen video için
+                ));
+
                 showNotification(selectedVideo ? 'Video updated successfully' : 'Video added successfully', 'success');
-                setTitle('');
-                setUrl('');
-                setNote('');
                 resetForm();
             } else {
                 const errorData = await response.json();
                 showNotification(`Failed to ${selectedVideo ? 'update' : 'add'} video: ${errorData.error || 'Unknown error'}`, 'error');
+                
+                // Hata durumunda optimistik değişiklikleri geri alın
+                if (!selectedVideo) {
+                    setVideos(videos.filter(video => video.id !== tempId));
+                }
             }
         } catch (error) {
             console.error('Error:', error);
             showNotification(`Failed to ${selectedVideo ? 'update' : 'add'} video: ${error.message}`, 'error');
+
+            // Hata durumunda optimistik değişiklikleri geri alın
+            if (!selectedVideo) {
+                setVideos(videos.filter(video => video.id !== tempId));
+            }
         }
     };
+
+    
 
     return (
         <form onSubmit={handleSubmit} className={tableClasses.formContainer + " space-y-4"}>

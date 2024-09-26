@@ -35,7 +35,7 @@ const ExerciseList = ({ exercises, selectedIds, setSelectedIds, onEdit, onDelete
           <th className={tableClasses.tableHeader + " w-1/12"}>Select</th>
           <th className={tableClasses.tableHeader + " w-5/12"}>Title</th>
           <th className={tableClasses.tableHeader + " w-2/12"}>Duration</th>
-          <th className={tableClasses.tableHeader + " w-1/12"}>Description</th>
+          <th className={tableClasses.tableHeader + " w-1/12"}>Desc</th>
           <th className={tableClasses.tableHeader + " w-3/12"}>Actions</th>
         </tr>
       </thead>

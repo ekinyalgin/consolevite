@@ -2,28 +2,34 @@ import React, { useState } from 'react';
 import tableClasses from '../../utils/tableClasses';
 import { Check, XCircle, NotebookPen, Edit, Trash2, Plus } from 'lucide-react';
 
-const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification }) => {
+const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification, setVideos }) => {
     const [expandedNoteId, setExpandedNoteId] = useState(null);
     const [togglingDoneId, setTogglingDoneId] = useState(null);
 
     const toggleDone = async (id, done) => {
         setTogglingDoneId(id);
-    
-        const videoToUpdate = videos.find(video => video.id === id);
-    
-        if (!videoToUpdate) {
-            showNotification('Video not found', 'error');
-            return;
-        }
-    
+
+        // Optimistik güncelleme: UI'da "done" durumunu hemen değiştir
+        setVideos(prevVideos => 
+            prevVideos.map(video => 
+                video.id === id ? { ...video, done: done ? 0 : 1 } : video
+            )
+        );
+
         try {
+            const videoToUpdate = videos.find(video => video.id === id);
+            if (!videoToUpdate) {
+                showNotification('Video not found', 'error');
+                return;
+            }
+
             const updatedVideoData = {
                 title: videoToUpdate.title,
                 url: videoToUpdate.url,
                 note: videoToUpdate.note,
                 done: done ? 0 : 1,
             };
-    
+
             const token = localStorage.getItem('token');
             const response = await fetch(`${import.meta.env.VITE_API_URL}/videos/${id}`, {
                 method: 'PUT',
@@ -33,38 +39,69 @@ const VideoList = ({ videos, fetchVideos, setSelectedVideo, showNotification }) 
                 },
                 body: JSON.stringify(updatedVideoData),
             });
-    
+
             if (response.ok) {
-                fetchVideos();
                 showNotification('Video updated successfully', 'success');
             } else {
                 const errorData = await response.json();
                 showNotification(`Failed to update video: ${errorData.error || 'Unknown error'}`, 'error');
+
+                // Hata durumunda optimistik güncellemeyi geri alın
+                setVideos(prevVideos => 
+                    prevVideos.map(video => 
+                        video.id === id ? { ...video, done: done } : video
+                    )
+                );
             }
         } catch (error) {
             showNotification(`Failed to update video: ${error.message}`, 'error');
+
+            // Hata durumunda optimistik güncellemeyi geri alın
+            setVideos(prevVideos => 
+                prevVideos.map(video => 
+                    video.id === id ? { ...video, done: done } : video
+                )
+            );
         } finally {
             setTogglingDoneId(null);
         }
     };
+
     
     const deleteVideo = async (id) => {
         if (window.confirm('Are you sure you want to delete this video?')) {
+            // Optimistik güncelleme: Videoyu hemen UI'dan kaldır
+            const previousVideos = videos; // Mevcut durumu saklayın
+            setVideos(prevVideos => prevVideos.filter(video => video.id !== id));
+
             try {
                 const token = localStorage.getItem('token');
-                await fetch(`${import.meta.env.VITE_API_URL}/videos/${id}`, {
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/videos/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-                fetchVideos();
-                showNotification('Video deleted successfully', 'success');
+
+                if (response.ok) {
+                    showNotification('Video deleted successfully', 'success');
+                } else {
+                    const errorData = await response.json();
+                    showNotification(`Failed to delete video: ${errorData.error || 'Unknown error'}`, 'error');
+
+                    // Hata durumunda optimistik güncellemeyi geri alın
+                    setVideos(previousVideos);
+                }
             } catch (error) {
                 showNotification('Failed to delete video', 'error');
+
+                // Hata durumunda optimistik güncellemeyi geri alın
+                setVideos(previousVideos);
             }
         }
     };
+
+    
 
     const toggleNote = (id) => {
         setExpandedNoteId(expandedNoteId === id ? null : id);

@@ -88,6 +88,8 @@ const VideosPage = () => {
                         selectedVideo={selectedVideo} 
                         showNotification={showNotification}
                         resetForm={resetForm}
+                        setVideos={setVideos} 
+                        videos={videos}
                     />
                 </div>
                 <div className="lg:w-9/12">
@@ -96,6 +98,7 @@ const VideosPage = () => {
                         fetchVideos={() => fetchVideos(true)} 
                         setSelectedVideo={openEditForm} 
                         showNotification={showNotification} 
+                        setVideos={setVideos} 
                     />
                     
                     <div className="flex justify-between mt-4">

@@ -154,37 +154,53 @@ const TodoPage = () => {
     };
 
     const handleToggleDone = async (id, currentDate) => {
+        // Optimistik güncelleme
+        let nextDate;
+        if (currentDate) {
+            nextDate = new Date(currentDate);
+            nextDate.setDate(nextDate.getDate() + 1);
+        } else {
+            nextDate = new Date();
+            nextDate.setDate(nextDate.getDate() + 1);
+        }
+        const formattedDate = formatDate(nextDate);
+    
+        // UI'yı hemen güncelle
+        setTodos(prevTodos => 
+            prevTodos.map(todo => 
+                todo.id === id ? { ...todo, date: formattedDate } : todo
+            )
+        );
+    
         try {
-            let nextDate;
-            if (currentDate) {
-                nextDate = new Date(currentDate);
-                nextDate.setDate(nextDate.getDate() + 1);
-            } else {
-                nextDate = new Date();
-                nextDate.setDate(nextDate.getDate() + 1);
-            }
-
-            const formattedDate = formatDate(nextDate);
-
             const token = localStorage.getItem('token');
             const response = await axios.put(`${API_URL}/todos/${id}/date`, 
                 { date: formattedDate }, 
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
-            
+    
             const updatedTodo = response.data;
-            
-            setTodos(prevTodos => prevTodos.map(todo => todo.id === id ? updatedTodo : todo));
-
+    
+            // Sunucu yanıtı geldiğinde doğru verilerle UI'yı güncelle
+            setTodos(prevTodos => prevTodos.map(todo => 
+                todo.id === id ? updatedTodo : todo
+            ));
+    
             setNotification({ message: 'Todo updated successfully', type: 'success' });
         } catch (error) {
+            // Hata durumunda UI'yı eski haline getir
             console.error('Error updating todo:', error);
             setNotification({ message: `Error updating todo: ${error.message}`, type: 'error' });
+    
+            // Eski duruma geri döndür
+            setTodos(prevTodos => 
+                prevTodos.map(todo => 
+                    todo.id === id ? { ...todo, date: currentDate } : todo
+                )
+            );
         }
     };
-
+    
     const handleDateChange = async (id, newDate) => {
         try {
             if (!newDate) {
@@ -208,44 +224,65 @@ const TodoPage = () => {
     };
 
     const handleSave = async (todoData) => {
-        try {
-          const token = localStorage.getItem('token');
-          let response;
-      
-          // Tarih verisini UTC olarak ayarlayın
-          if (todoData.date) {
+        let tempId = null; // tempId'yi başlangıçta tanımlayın
+        
+        // Optimistik güncelleme: UI'ya yeni görevi hemen ekle/güncelle
+        if (todoData.date) {
             const utcDate = Date.UTC(todoData.date.getFullYear(), todoData.date.getMonth(), todoData.date.getDate());
             todoData.date = new Date(utcDate).toISOString().split('T')[0];
-          }
-      
-          // Eğer todo güncelleniyorsa
-          if (todoData.id) {
-            response = await axios.put(`${API_URL}/todos/${todoData.id}`, todoData, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            setTodos(prevTodos => prevTodos.map(todo => 
-                todo.id === todoData.id ? response.data : todo
-            ));
-          } else {
-            // Yeni todo ekleniyorsa
-            response = await axios.post(`${API_URL}/todos`, todoData, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            setTodos(prevTodos => [...prevTodos, response.data]);
-          }
-      
-          setNotification({ message: 'Todo saved successfully', type: 'success' });
-          setSelectedTodo(null);
-        } catch (error) {
-          console.error('Error saving todo:', error);
-          let errorMessage = 'Error saving todo';
-          if (error.response && error.response.data && error.response.data.details) {
-            errorMessage += ': ' + error.response.data.details;
-          }
-          setNotification({ message: errorMessage, type: 'error' });
         }
-      };
-      
+    
+        if (todoData.id) {
+            // Güncelleme için optimistik güncelleme
+            setTodos(prevTodos => prevTodos.map(todo => 
+                todo.id === todoData.id ? { ...todoData } : todo
+            ));
+        } else {
+            // Yeni ekleme için optimistik güncelleme
+            tempId = `temp-${Math.random()}`; // Geçici bir ID ile yeni öğe oluştur
+            setTodos(prevTodos => [...prevTodos, { ...todoData, id: tempId }]);
+        }
+    
+        try {
+            const token = localStorage.getItem('token');
+            let response;
+    
+            if (todoData.id) {
+                // Güncelleme isteği
+                response = await axios.put(`${API_URL}/todos/${todoData.id}`, todoData, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setTodos(prevTodos => prevTodos.map(todo => 
+                    todo.id === todoData.id ? response.data : todo
+                ));
+            } else {
+                // Ekleme isteği
+                response = await axios.post(`${API_URL}/todos`, todoData, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                // Geçici öğeyi gerçek öğe ile değiştir
+                setTodos(prevTodos => prevTodos.map(todo => 
+                    todo.id === tempId ? response.data : todo
+                ));
+            }
+    
+            setNotification({ message: 'Todo saved successfully', type: 'success' });
+            setSelectedTodo(null);
+        } catch (error) {
+            console.error('Error saving todo:', error);
+            let errorMessage = 'Error saving todo';
+            if (error.response && error.response.data && error.response.data.details) {
+                errorMessage += ': ' + error.response.data.details;
+            }
+            setNotification({ message: errorMessage, type: 'error' });
+    
+            // Hata durumunda optimistik değişiklikleri geri alın
+            if (!todoData.id) {
+                setTodos(prevTodos => prevTodos.filter(todo => todo.id !== tempId));
+            }
+        }
+    };
+    
 
     const handleEdit = (todo) => {
         setSelectedTodo(todo);
@@ -259,17 +296,25 @@ const TodoPage = () => {
     };
 
     const handleDelete = async (id) => {
+        // Optimistik güncelleme: UI'dan öğeyi hemen kaldır
+        const previousTodos = todos; // Eski durumu saklayın
+        setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
+    
         try {
             const token = localStorage.getItem('token');
             await axios.delete(`${API_URL}/todos/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setNotification({ message: 'Todo deleted successfully', type: 'success' });
-            fetchTodos();
         } catch (error) {
+            console.error('Error deleting todo:', error);
             setNotification({ message: 'Error deleting todo', type: 'error' });
+    
+            // Hata durumunda UI'yı eski haline getir
+            setTodos(previousTodos);
         }
     };
+    
 
     useEffect(() => {
         const handleResize = () => {
