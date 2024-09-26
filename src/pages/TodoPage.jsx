@@ -209,39 +209,43 @@ const TodoPage = () => {
 
     const handleSave = async (todoData) => {
         try {
-            const token = localStorage.getItem('token');
-            let response;
-
-            if (todoData.date) {
-                const utcDate = Date.UTC(todoData.date.getFullYear(), todoData.date.getMonth(), todoData.date.getDate());
-                todoData.date = new Date(utcDate).toISOString().split('T')[0];
-            }
-
-            if (todoData.id) {
-                response = await axios.put(`${API_URL}/todos/${todoData.id}`, todoData, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setTodos(prevTodos => prevTodos.map(todo => 
-                    todo.id === todoData.id ? response.data : todo
-                ));
-            } else {
-                response = await axios.post(`${API_URL}/todos`, todoData, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                setTodos(prevTodos => [...prevTodos, response.data]);
-            }
-
-            setNotification({ message: 'Todo saved successfully', type: 'success' });
-            setSelectedTodo(null);
+          const token = localStorage.getItem('token');
+          let response;
+      
+          // Tarih verisini UTC olarak ayarlayın
+          if (todoData.date) {
+            const utcDate = Date.UTC(todoData.date.getFullYear(), todoData.date.getMonth(), todoData.date.getDate());
+            todoData.date = new Date(utcDate).toISOString().split('T')[0];
+          }
+      
+          // Eğer todo güncelleniyorsa
+          if (todoData.id) {
+            response = await axios.put(`${API_URL}/todos/${todoData.id}`, todoData, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setTodos(prevTodos => prevTodos.map(todo => 
+                todo.id === todoData.id ? response.data : todo
+            ));
+          } else {
+            // Yeni todo ekleniyorsa
+            response = await axios.post(`${API_URL}/todos`, todoData, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setTodos(prevTodos => [...prevTodos, response.data]);
+          }
+      
+          setNotification({ message: 'Todo saved successfully', type: 'success' });
+          setSelectedTodo(null);
         } catch (error) {
-            console.error('Error saving todo:', error);
-            let errorMessage = 'Error saving todo';
-            if (error.response && error.response.data && error.response.data.details) {
-                errorMessage += ': ' + error.response.data.details;
-            }
-            setNotification({ message: errorMessage, type: 'error' });
+          console.error('Error saving todo:', error);
+          let errorMessage = 'Error saving todo';
+          if (error.response && error.response.data && error.response.data.details) {
+            errorMessage += ': ' + error.response.data.details;
+          }
+          setNotification({ message: errorMessage, type: 'error' });
         }
-    };
+      };
+      
 
     const handleEdit = (todo) => {
         setSelectedTodo(todo);

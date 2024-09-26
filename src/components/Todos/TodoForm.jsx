@@ -17,12 +17,14 @@ const TodoForm = ({ selectedTodo, onSave, onCancel }) => {
         note: selectedTodo.note || '',
         date: selectedTodo.date ? new Date(selectedTodo.date) : null,
       });
-      setLinks(selectedTodo.links || []);
+      setLinks(Array.isArray(selectedTodo.links) ? selectedTodo.links : []); // Eğer `selectedTodo.links` array değilse, boş dizi olarak ayarla
       setShowNote(!!selectedTodo.note);
     } else {
       resetForm();
     }
   }, [selectedTodo]);
+  
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

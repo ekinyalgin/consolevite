@@ -100,15 +100,18 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, notRevi
                             </td>
                             <td className={tableClasses.tableCell}>
                                 <div className="flex items-center space-x-2">
-                                    {todo.links && todo.links.map((link, index) => (
-                                        <a 
-                                            key={index} 
-                                            href={link.url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            dangerouslySetInnerHTML={{ __html: link.icon }}
-                                        />
-                                    ))}
+                                    
+                                {Array.isArray(todo.links) && todo.links.map((link, index) => (
+                                    
+    <a 
+      key={index} 
+      href={link.url} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      dangerouslySetInnerHTML={{ __html: link.icon }}
+    />
+  ))}
+
                                 </div>
                             </td>
 

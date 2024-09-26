@@ -8,9 +8,9 @@ exports.getAllTodos = async (req, res, next) => {
     const [links] = await pool.query('SELECT * FROM todo_links');
     
     const todosWithLinks = todos.map(todo => {
-      todo.links = links.filter(link => link.todo_id === todo.id);
-      return todo;
-    });
+		todo.links = links.filter(link => link.todo_id === todo.id);
+		return todo;
+	  });
 
     res.json(todosWithLinks || []);
   } catch (error) {
@@ -63,44 +63,55 @@ exports.deleteTodo = async (req, res) => {
 
 exports.updateTodo = async (req, res) => {
 	const { id } = req.params;
-	const { title, note, date, links } = req.body;
+	const { title, note, date, links } = req.body; // links artık sadece ilişkili tablodan yönetilecek
 	const connection = await pool.getConnection();
 	try {
-		await connection.beginTransaction();
-		const formattedDate = date ? new Date(date).toLocaleDateString('fr-CA') : null;
-		const query = 'UPDATE todos SET title = ?, note = ?, date = ? WHERE id = ?';
-		const params = [title, note, formattedDate, id];
-		const [result] = await connection.query(query, params);
-
-		if (result.affectedRows === 0) {
-			await connection.rollback();
-			return res.status(404).json({ error: 'Todo not found' });
-		}
-
-		await connection.query('DELETE FROM todo_links WHERE todo_id = ?', [id]);
-		if (links && links.length > 0) {
-			const linkPromises = links.map(link => 
-				connection.query(
-					'INSERT INTO todo_links (todo_id, url, icon) VALUES (?, ?, ?)',
-					[id, link.url, link.icon]
-				)
-			);
-			await Promise.all(linkPromises);
-		}
-
-		await connection.commit();
-		const [updatedTodo] = await connection.query('SELECT * FROM todos WHERE id = ?', [id]);
-		const [updatedLinks] = await connection.query('SELECT * FROM todo_links WHERE todo_id = ?', [id]);
-		updatedTodo[0].links = updatedLinks;
-		res.json(updatedTodo[0]);
-	} catch (error) {
+	  await connection.beginTransaction();
+	  
+	  // Tarih formatını düzenleyin
+	  const formattedDate = date ? new Date(date).toLocaleDateString('fr-CA') : null;
+  
+	  // `todos` tablosundaki veriyi güncelleyin (links burada yok)
+	  const query = 'UPDATE todos SET title = ?, note = ?, date = ? WHERE id = ?';
+	  const params = [title, note, formattedDate, id];
+	  const [result] = await connection.query(query, params);
+  
+	  if (result.affectedRows === 0) {
 		await connection.rollback();
-		console.error('Error updating todo:', error);
-		res.status(500).json({ error: 'Server error', details: error.message, stack: error.stack });
+		return res.status(404).json({ error: 'Todo not found' });
+	  }
+  
+	  // `todo_links` tablosundaki eski linkleri silin
+	  await connection.query('DELETE FROM todo_links WHERE todo_id = ?', [id]);
+  
+	  // Yeni linkleri `todo_links` tablosuna ekleyin
+	  if (Array.isArray(links) && links.length > 0) {
+		const linkPromises = links.map(link => 
+		  connection.query(
+			'INSERT INTO todo_links (todo_id, url, icon) VALUES (?, ?, ?)',
+			[id, link.url, link.icon]
+		  )
+		);
+		await Promise.all(linkPromises);
+	  }
+  
+	  await connection.commit();
+  
+	  // Güncellenen `todo`yu ve ilgili `links` verilerini tekrar alın
+	  const [updatedTodo] = await connection.query('SELECT * FROM todos WHERE id = ?', [id]);
+	  const [updatedLinks] = await connection.query('SELECT * FROM todo_links WHERE todo_id = ?', [id]);
+	  updatedTodo[0].links = updatedLinks; // links verisini ekleyin
+  
+	  res.json(updatedTodo[0]);
+	} catch (error) {
+	  await connection.rollback();
+	  console.error('Error updating todo:', error);
+	  res.status(500).json({ error: 'Server error', details: error.message, stack: error.stack });
 	} finally {
-		connection.release();
+	  connection.release();
 	}
-};
+  };
+  
 
 exports.updateTodoDate = async (req, res) => {
 	const { id } = req.params;
