@@ -3,22 +3,22 @@ import VideoForm from '../components/Videos/VideoForm';
 import VideoList from '../components/Videos/VideoList';
 import Notification from '../utils/Notification';
 import tableClasses from '../utils/tableClasses';
+import { Plus, X } from 'lucide-react'; // Plus ve X ikonlarını ekliyoruz
 
 const VideosPage = () => {
     const [videos, setVideos] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [message, setMessage] = useState(null);
     const [offset, setOffset] = useState(0);
-    const limit = 10; 
+    const [isFormOpen, setIsFormOpen] = useState(false); // Formun açık/kapalı durumunu kontrol eden state
+    const limit = 10;
 
     useEffect(() => {
         const checkAuth = async () => {
             const token = localStorage.getItem('token');
             if (!token) {
-                // Redirect to login page or show error
                 return;
             }
-            // Optionally, verify token with server
             fetchVideos(true);
         };
         checkAuth();
@@ -27,7 +27,7 @@ const VideosPage = () => {
     const fetchVideos = async (initialLoad = false) => {
         try {
             const token = localStorage.getItem('token');
-            
+
             const response = await fetch(`${import.meta.env.VITE_API_URL}/videos?limit=${limit}&offset=${initialLoad ? 0 : offset}`, {
                 method: 'GET',
                 headers: {
@@ -43,7 +43,7 @@ const VideosPage = () => {
             const data = await response.json();
 
             if (initialLoad) {
-                setVideos(data); 
+                setVideos(data);
             } else {
                 setVideos((prevVideos) => [...prevVideos, ...data]);
             }
@@ -57,6 +57,7 @@ const VideosPage = () => {
 
     const openEditForm = (video) => {
         setSelectedVideo(video);
+        setIsFormOpen(true); // Düzenleme için formu aç
     };
 
     const showNotification = (msg, type) => {
@@ -65,6 +66,7 @@ const VideosPage = () => {
 
     const resetForm = () => {
         setSelectedVideo(null);
+        setIsFormOpen(false); // Formu kapat
     };
 
     const goToRandomVideo = () => {
@@ -82,7 +84,7 @@ const VideosPage = () => {
             {message && <Notification message={message.text} type={message.type} onClose={() => setMessage(null)} />}
             <h1 className={tableClasses.h1}>Videos</h1>
             <div className="sm:space-x-8 flex flex-col md:flex-row">
-                <div className="sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0">
+                <div className={`sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0 ${isFormOpen ? '' : 'hidden md:block'}`}>
                     <VideoForm 
                         fetchVideos={() => fetchVideos(true)} 
                         selectedVideo={selectedVideo} 
@@ -92,6 +94,7 @@ const VideosPage = () => {
                         videos={videos}
                     />
                 </div>
+
                 <div className="lg:w-9/12">
                     <VideoList 
                         videos={videos} 
@@ -100,7 +103,7 @@ const VideosPage = () => {
                         showNotification={showNotification} 
                         setVideos={setVideos} 
                     />
-                    
+
                     <div className="flex justify-between mt-4">
                         {videos.length % limit === 0 && (
                             <button onClick={() => fetchVideos()} className={tableClasses.transButton}>
@@ -113,6 +116,26 @@ const VideosPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Formu aç/kapa butonu */}
+            {!isFormOpen && (
+                <button
+                    onClick={() => setIsFormOpen(true)}
+                    className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-md hover:bg-blue-700 transition duration-300 md:hidden"
+                >
+                    <Plus className="w-4 h-4" strokeWidth={3} />
+                </button>
+            )}
+
+            {/* <Check className={tableClasses.checkIconBlack} strokeWidth={3} /> */}
+            {isFormOpen && (
+                <button
+                    onClick={() => setIsFormOpen(false)}
+                    className="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-md hover:bg-red-700 transition duration-300 md:hidden"
+                >
+                    <X className="w-4 h-4" strokeWidth={3} />
+                </button>
+            )}
         </div>
     );
 };

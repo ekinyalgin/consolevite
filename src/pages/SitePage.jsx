@@ -4,10 +4,12 @@ import SiteList from '../components/Sites/SiteList';
 import Notification from '../utils/Notification';
 import tableClasses from '../utils/tableClasses';
 import axios from 'axios';
+import { Plus, X } from 'lucide-react'; // Plus ve X ikonlarını ekliyoruz
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const SitePage = () => {
+  const [isFormOpen, setIsFormOpen] = useState(false); // Formun açık/kapalı durumunu kontrol eden state
   const [sites, setSites] = useState([]); // `sites` ve `setSites` state'ini tanımlayın
   const [notification, setNotification] = useState(null);
   const [selectedSite, setSelectedSite] = useState(null);
@@ -62,6 +64,7 @@ const SitePage = () => {
 
   const handleEditSite = (site) => {
     setSelectedSite(site);
+    setIsFormOpen(true); // Düzenleme için formu aç
   };
 
   return (
@@ -76,12 +79,15 @@ const SitePage = () => {
 
       <h1 className={tableClasses.h1}>Sites</h1>
       <div className="sm:space-x-8 flex flex-col md:flex-row">
-        <div className="sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0">
+        <div className={`sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0 ${isFormOpen ? '' : 'hidden md:block'}`}>
           <SiteForm
             onNotification={handleNotification}
             onSubmit={handleSiteAddedOrUpdated}
             initialData={selectedSite}
-            onCancel={() => setSelectedSite(null)}
+            onCancel={() => {
+              setSelectedSite(null);
+              setIsFormOpen(false); // Form kapatıldığında `isFormOpen` state'ini false yapıyoruz
+            }}
           />
         </div>
         <div className="lg:w-9/12">
@@ -98,6 +104,25 @@ const SitePage = () => {
           />
         </div>
       </div>
+
+      {/* Formu aç/kapa butonu */}
+      {!isFormOpen && (
+        <button
+          onClick={() => setIsFormOpen(true)}
+          className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-md hover:bg-blue-700 transition duration-300 md:hidden"
+        >
+          <Plus className="w-4 h-4" strokeWidth={3} />
+        </button>
+      )}
+
+      {isFormOpen && (
+        <button
+          onClick={() => setIsFormOpen(false)}
+          className="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-md hover:bg-red-700 transition duration-300 md:hidden"
+        >
+          <X className="w-4 h-4" strokeWidth={3} />
+        </button>
+      )}
     </div>
   );
 };

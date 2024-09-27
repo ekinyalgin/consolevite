@@ -18,7 +18,7 @@ export const tableClasses = {
   tableHeader: "bg-gray-100 text-xs font-semibold uppercase py-2 text-gray-400 border-b border-gray-100",
   tableBody: "bg-white divide-y divide-gray-200",
   tableRow: "hover:bg-gray-50",
-  tableTitle: "border-b border-gray-100 text-left text-sm font-semibold px-2",
+  tableTitle: "border-b border-gray-100 text-left text-sm font-semibold px-2 py-2",
   //tableCell: "px-6 py-4 whitespace-nowrap text-sm text-gray-700",
   tableCell: "border-b border-gray-100 h-10 text-center px-2 text-xs text-gray-700",
   tableCellExpanded: "px-8 py-2 text-xs",

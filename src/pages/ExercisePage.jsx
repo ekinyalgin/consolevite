@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ExerciseForm from '../components/Exercises/ExerciseForm';
 import ExerciseList from '../components/Exercises/ExerciseList';
-import { PlayCircle, Shuffle, X } from 'lucide-react';
+import { PlayCircle, Shuffle, X, Plus } from 'lucide-react';
 import Notification from '../utils/Notification';
 import tableClasses from '../utils/tableClasses';
 import axios from 'axios';
@@ -14,6 +14,7 @@ const ExercisePage = () => {
   const [notification, setNotification] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [showOnlySelected, setShowOnlySelected] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false); // State to control form visibility
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -179,11 +180,14 @@ const handleEdit = (exercise) => {
 
       <h1 className={tableClasses.h1}>Exercises</h1>
       <div className="sm:space-x-8 flex flex-col md:flex-row">
-        <div className="sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0">
+        <div className={`sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0 ${isFormOpen ? '' : 'hidden md:block'}`}>
           <ExerciseForm
             selectedExercise={selectedExercise}
             onSave={handleSave}
-            onCancel={() => setSelectedExercise(null)}
+            onCancel={() => {
+              setSelectedExercise(null);
+              setIsFormOpen(false); // Close form when cancelled
+            }}
           />
         </div>
         <div className="lg:w-9/12">
@@ -203,12 +207,34 @@ const handleEdit = (exercise) => {
             exercises={exercises} 
             selectedIds={selectedIds} 
             setSelectedIds={setSelectedIds} 
-            onEdit={handleEdit} 
+            onEdit={(exercise) => {
+              setSelectedExercise(exercise);
+              setIsFormOpen(true); // Open form for editing
+            }}
             onDelete={handleDelete} 
             showOnlySelected={showOnlySelected} 
           />
         </div>
       </div>
+
+      {/* Button to open/close the form */}
+      {!isFormOpen && (
+        <button
+          onClick={() => setIsFormOpen(true)}
+          className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-md hover:bg-blue-700 transition duration-300 md:hidden"
+        >
+          <Plus className="w-4 h-4" strokeWidth={3} />
+        </button>
+      )}
+
+      {isFormOpen && (
+        <button
+          onClick={() => setIsFormOpen(false)}
+          className="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-md hover:bg-red-700 transition duration-300 md:hidden"
+        >
+          <X className="w-4 h-4" strokeWidth={3} />
+        </button>
+      )}
     </div>
   );
 };

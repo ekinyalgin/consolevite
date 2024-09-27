@@ -10,7 +10,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { formatDate, getNextDay } from '../components/Todos/dateUtils';
 import tableClasses from '../utils/tableClasses';
-import { LoaderCircle } from 'lucide-react'; // Lucide ikonunu import ediyoruz
+import { LoaderCircle, Plus, X } from 'lucide-react'; // Lucide ikonunu import ediyoruz
 
 const TodoPage = () => {
     const { user, loading } = useContext(AuthContext);
@@ -23,6 +23,7 @@ const TodoPage = () => {
     const [notReviewedUrls, setNotReviewedUrls] = useState([]);
     const [sites, setSites] = useState([]);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [isFormOpen, setIsFormOpen] = useState(false); // Formun açık/kapalı durumunu kontrol eden state
 
     const API_URL = import.meta.env.VITE_API_URL;
     const formRef = useRef(null);
@@ -286,6 +287,7 @@ const TodoPage = () => {
 
     const handleEdit = (todo) => {
         setSelectedTodo(todo);
+        setIsFormOpen(true); // Düzenleme için formu aç
         if (formRef.current) {
             formRef.current.scrollIntoView({ behavior: 'smooth' });
         }
@@ -293,6 +295,7 @@ const TodoPage = () => {
 
     const handleFormCancel = () => {
         setSelectedTodo(null);
+        setIsFormOpen(false); // Form kapatıldığında `isFormOpen` state'ini false yapıyoruz
     };
 
     const handleDelete = async (id) => {
@@ -377,7 +380,7 @@ const TodoPage = () => {
             <h1 className={tableClasses.h1}>Todos</h1>
             <div className="sm:space-x-8 flex flex-col md:flex-row">
                 {/* Form Section */}
-                <div ref={formRef} className="sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0">
+                <div ref={formRef} className={`sm:bg-gray-100 rounded-lg sm:p-5 w-full md:w-3/12 mb-5 md:mb-0 ${isFormOpen ? '' : 'hidden md:block'}`}>
                     <TodoForm
                         key={selectedTodo ? selectedTodo.id : 'new'}
                         selectedTodo={selectedTodo}
@@ -405,6 +408,25 @@ const TodoPage = () => {
                     ))}
                 </div>
             </div>
+
+            {/* Formu aç/kapa butonu */}
+            {!isFormOpen && (
+                <button
+                    onClick={() => setIsFormOpen(true)}
+                    className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-md hover:bg-blue-700 transition duration-300 md:hidden"
+                >
+                    <Plus className="w-4 h-4" strokeWidth={3} />
+                </button>
+            )}
+
+            {isFormOpen && (
+                <button
+                    onClick={() => setIsFormOpen(false)}
+                    className="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-md hover:bg-red-700 transition duration-300 md:hidden"
+                >
+                    <X className="w-4 h-4" strokeWidth={3} />
+                </button>
+            )}
         </div>
     );
 };
