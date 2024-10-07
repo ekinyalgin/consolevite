@@ -1,6 +1,6 @@
 // controllers/authController.js
 const jwt = require('jsonwebtoken');
-const pool = require('../config/db'); // Veritabanı bağlantınızın bulunduğu dosya
+const pool = require('../config/dbold'); // Veritabanı bağlantınızın bulunduğu dosya
 
 // login/success endpoint'i
 exports.loginSuccess = async (req, res) => {

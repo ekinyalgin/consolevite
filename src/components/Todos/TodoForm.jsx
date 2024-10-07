@@ -1,165 +1,151 @@
 import React, { useEffect, useState } from 'react';
-import { XCircle, FileText, Plus, Link } from 'lucide-react';
-import tableClasses from '../../utils/tableClasses';
+import { XCircle, Link } from 'lucide-react';
+import FormComponent from '../common/FormComponent';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 const TodoForm = ({ selectedTodo, onSave, onCancel }) => {
-  const [form, setForm] = useState({ title: '', note: '', date: null, links: [] });
-  const [links, setLinks] = useState([]);
-  const [showNote, setShowNote] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    note: '',
+    date: null,
+    links: []
+  });
 
   useEffect(() => {
     if (selectedTodo) {
-      setForm({
+      setFormData({
         id: selectedTodo.id,
         title: selectedTodo.title || '',
         note: selectedTodo.note || '',
         date: selectedTodo.date ? new Date(selectedTodo.date) : null,
+        links: Array.isArray(selectedTodo.links) ? selectedTodo.links : []
       });
-      setLinks(Array.isArray(selectedTodo.links) ? selectedTodo.links : []); // Eğer `selectedTodo.links` array değilse, boş dizi olarak ayarla
-      setShowNote(!!selectedTodo.note);
     } else {
       resetForm();
     }
   }, [selectedTodo]);
-  
-  
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+  // Form verilerindeki değişiklikleri yönetir
+  const handleChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Yeni bir link ekler
   const handleAddLink = () => {
-    setLinks([...links, { url: '', icon: '' }]);
+    setFormData(prev => ({
+      ...prev,
+      links: [...prev.links, { url: '', icon: '' }]
+    }));
   };
 
+  // Bir linki kaldırır
   const handleRemoveLink = (index) => {
-    const newLinks = links.filter((_, i) => i !== index);
-    setLinks(newLinks);
+    setFormData(prev => ({
+      ...prev,
+      links: prev.links.filter((_, i) => i !== index)
+    }));
   };
 
+  // Link alanlarındaki değişiklikleri yönetir
   const handleLinkChange = (index, field, value) => {
-    const newLinks = [...links];
-    newLinks[index][field] = value;
-    setLinks(newLinks);
+    setFormData(prev => ({
+      ...prev,
+      links: prev.links.map((link, i) => 
+        i === index ? { ...link, [field]: value } : link
+      )
+    }));
   };
 
+  // Form sıfırlama işlevi
   const resetForm = () => {
-    setForm({ title: '', note: '', date: null });
-    setLinks([]);
-    setShowNote(false);
-    onCancel(); // Bu satırı ekledik
+    setFormData({ title: '', note: '', date: null, links: [] });
+    onCancel();
   };
 
-  const handleFormSubmit = (e) => {
+  // Form gönderim işlemi
+  const handleSubmit = (e) => {
     e.preventDefault();
-    onSave({ ...form, links });
+    onSave(formData);
   };
 
-  const handleDateChange = (date) => {
-    if (date) {
-      const utcDate = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-      setForm({ ...form, date: new Date(utcDate) });
-    } else {
-      setForm({ ...form, date: null });
-    }
-  };
-
-  const toggleNote = () => setShowNote(!showNote);
-
-  return (
-    <form onSubmit={handleFormSubmit} className={tableClasses.formContainer + " space-y-4"}>
-      <input
-        type="text"
-        className={`${tableClasses.formInput} w-full`}
-        name="title"
-        value={form.title}
-        onChange={handleInputChange}
-        placeholder="Title"
-        required
-      />
-      <DatePicker
-        selected={form.date}
-        onChange={handleDateChange}
-        dateFormat="dd/MM/yyyy"
-        className={`${tableClasses.formInput} w-full mr-10`}
-        placeholderText="Date"
-      />
-      <div className='flex items-center justify-center space-x-2'>
-        <button
-          type="button"
-          onClick={handleAddLink}
-          className="hover:bg-gray-300 font-semibold text-sm px-4 py-2 rounded transition bg-gray-200 shadow-sm text-black w-1/2 flex items-center justify-center"
-        >
-          <Link className="w-4 h-5" />
-        </button>
-        <button
-          type="button"
-          onClick={toggleNote}
-          className="hover:bg-gray-300 font-semibold text-sm px-4 py-2 rounded transition bg-gray-200 shadow-sm text-black w-1/2 flex items-center justify-center"
-        >
-          <FileText className="w-4 h-5" />
-        </button>
-      </div>
-      <div className="flex space-x-2">
-        <button
-          type="submit"
-          className={`${tableClasses.formButton} ${selectedTodo ? 'w-4/6' : 'w-full'}`}
-        >
-          {selectedTodo ? 'Update' : 'Add'}
-        </button>
-        {selectedTodo && (
-          <button
-            type="button"
-            onClick={resetForm}
-            className={`${tableClasses.formButton} w-2/6 flex items-center justify-center`}
-          >
-            <XCircle className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-
-      {showNote && (
-        <div className="mb-4">
-          <textarea
-            className={tableClasses.formInput + " w-full"}
-            name="note"
-            value={form.note}
-            onChange={handleInputChange}
-            placeholder="Note"
-            rows="3"
-          />
-        </div>
-      )}
-
-      {links.map((link, index) => (
+  // Form alanlarının tanımlandığı dizi
+  const fields = [
+    { name: 'title', label: 'Title', type: 'text', required: true },
+    { 
+      name: 'date', 
+      label: 'Date', 
+      className: 'w-full',
+      type: 'custom',
+      render: (value, onChange) => (
+        <DatePicker
+          selected={value}
+          onChange={(date) => onChange('date', date)}
+          dateFormat="dd/MM/yyyy"
+          className="text-sm w-full mr-6 shadow border border-gray-100 rounded p-2 hover:border-gray-600"
+          placeholderText="Date"
+        />
+      )
+    },
+    { 
+      name: 'note', 
+      label: 'Note', 
+      type: 'textarea',
+      rows: 3,
+    },
+    ...formData.links.map((link, index) => ({
+      name: `link-${index}`,
+      label: `Link ${index + 1}`,
+      type: 'custom',
+      render: (_, onChange) => (
         <div key={index} className="flex items-center space-x-2">
           <input
             type="text"
             placeholder="URL"
-            className={tableClasses.formInput + " w-6/12 text-xs py-2"}
+            className="w-6/12 border border-gray-300 rounded p-2 text-xs"
             value={link.url}
             onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
           />
           <input
             type="text"
             placeholder="Icon"
-            className={tableClasses.formInput + " w-4/12 text-xs py-2"}
+            className="w-4/12 border border-gray-300 rounded p-2 text-xs"
             value={link.icon}
             onChange={(e) => handleLinkChange(index, 'icon', e.target.value)}
           />
           <button
             type="button"
             onClick={() => handleRemoveLink(index)}
-            className={tableClasses.cancelButton + " w-2/12"}
+            className="w-2/12 bg-red-500 text-white rounded p-2"
           >
-           <XCircle className="w-4 h-4" />
+            <XCircle className="w-4 h-4" />
           </button>
         </div>
-      ))}
-    </form>
+      )
+    }))
+  ];
+
+  return (
+    <FormComponent
+      formData={formData}
+      fields={fields}
+      title="Todo"
+      onChange={handleChange}
+     
+      onCancel={resetForm}
+      isEdit={!!selectedTodo}
+      extraButtons={
+        <button
+          type="button"
+          onClick={handleAddLink}
+          className="bg-gray-200 text-black px-4 py-2 rounded hover:bg-gray-300"
+        >
+          <Link className="w-4 h-4 inline-block mr-2" />
+          Add Link
+        </button>
+      }
+      onSubmit={handleSubmit}
+    />
   );
 };
 

@@ -15,6 +15,8 @@ const siteRoute = require('./routes/site');
 const urlRoute = require('./routes/url'); 
 const excelRoute = require('./routes/excel');
 const productionRoute = require('./routes/production');
+const balanceRoutes = require('./routes/balance');
+const productRoutes = require('./routes/product');
 
 app.use(express.json());
 app.use(passport.initialize());
@@ -56,6 +58,16 @@ app.use('/api/sites', siteRoute);
 app.use('/api/urls', urlRoute);  
 app.use('/api/excel', excelRoute);
 app.use('/api/production', productionRoute);
+app.use('/api/products', productRoutes);
+
+// New route for balances
+app.use('/api/balances', balanceRoutes);
+
+// Hata yakalama middleware'i
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
 
 // Statik dosyaları sunmak için
 app.use(express.static(path.join(__dirname, '../dist')));

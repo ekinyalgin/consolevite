@@ -1,7 +1,6 @@
 // components/Sites/CategoryPopup.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import tableClasses from '../../utils/tableClasses';
 import { Trash2 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -87,7 +86,7 @@ const CategoryPopup = ({ onClose, onNotification, onCategoryChange }) => {
               onClick={() => handleDeleteCategory(cat.id)}
               className="text-red-500 hover:text-red-700 transition-colors px-2"
             >
-              <Trash2 className={tableClasses.deleteIcon} strokeWidth={2} />
+              <Trash2 strokeWidth={2} />
             </button>
           </li>
         ))}

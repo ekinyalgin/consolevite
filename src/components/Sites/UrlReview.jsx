@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
-import tableClasses from '../../utils/tableClasses';
+import TableComponent from '../common/TableComponent';
 import Notification from '../../utils/Notification';
-import { ChartNoAxesGantt, MoveLeft, Trash2, BarChart2, Check } from 'lucide-react';
+import { ChartNoAxesGantt, MoveLeft, Trash2, Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import ExcelUrlList from './ExcelUrlList';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -21,6 +23,8 @@ const UrlReview = () => {
   const [showReviewed, setShowReviewed] = useState(false);
   const [selectedExcelUrls, setSelectedExcelUrls] = useState([]);
   const [showExcelContent, setShowExcelContent] = useState(false);
+  const [selectedNotReviewedItems, setSelectedNotReviewedItems] = useState([]);
+  const [selectedReviewedItems, setSelectedReviewedItems] = useState([]);
   const token = localStorage.getItem('token');
 
   const fetchUrls = async () => {
@@ -237,17 +241,80 @@ const UrlReview = () => {
     }
   };
 
+  const notReviewedColumns = [
+    {
+      key: 'done',
+      label: 'Done',
+      render: (_, item) => (
+        <button className="w-full" onClick={() => handleReviewToggle(item.id, false)}>
+          <Check className="w-4 h-4 mx-auto text-green-500" strokeWidth={3} />
+        </button>
+      ),
+    },
+    {
+      key: 'semrush',
+      label: 'Semrush',
+      render: (_, item) => (
+        <a 
+          href={`https://sr.toolsminati.com/analytics/organic/overview/?db=us&q=${item.url}&searchType=subfolder`} 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          <ChartNoAxesGantt className="w-4 h-4 mx-auto text-orange-500" strokeWidth={3} />
+        </a>
+      ),
+    },
+    {
+      key: 'url',
+      label: 'URL',
+      render: (value) => (
+        <a href={value} target="_blank" rel="noopener noreferrer">{formatUrl(value)}</a>
+      ),
+    },
+  ];
+
+  const reviewedColumns = [
+    {
+      key: 'done',
+      label: 'Done',
+      render: (_, item) => (
+        <button onClick={() => handleReviewToggle(item.id, true)}>
+          <Check className="w-5 h-5 text-green-500" strokeWidth={3} />
+        </button>
+      ),
+    },
+    {
+      key: 'semrush',
+      label: 'Semrush',
+      render: (_, item) => (
+        <a 
+          href={`https://sr.toolsminati.com/analytics/organic/overview/?db=us&q=${item.url}&searchType=subfolder`} 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          <ChartNoAxesGantt className="w-5 h-5 text-gray-500" strokeWidth={3} />
+        </a>
+      ),
+    },
+    {
+      key: 'url',
+      label: 'URL',
+      render: (value) => (
+        <a href={value} target="_blank" rel="noopener noreferrer">{formatUrl(value)}</a>
+      ),
+    },
+  ];
+
   return (
     <div className="overflow-x-auto w-full">
       <div className='flex items-center mb-6'>
-      <a href="/sites">
-  <div className='hover:bg-gray-200 rounded-full p-2 flex items-center justify-center'>
-    <MoveLeft className='text-black w-5 h-5' />
-  </div>
-  </a>
-  <h1 className={`${tableClasses.h1} ml-4 !mb-0`}>{`URL Review for ${domainName || 'Unknown Domain'}`}</h1>
-</div>
-
+        <Link to="/sites">
+          <div className='hover:bg-gray-200 rounded-full p-2 flex items-center justify-center'>
+            <MoveLeft className='text-black w-5 h-5' />
+          </div>
+        </Link>
+        <h1 className="text-2xl font-bold ml-4 mb-0">{`URL Review for ${domainName || 'Unknown Domain'}`}</h1>
+      </div>
 
       {notification && (
         <Notification
@@ -260,7 +327,7 @@ const UrlReview = () => {
       {domainName && (
         <>
           <button
-            className={tableClasses.transButton}
+            className="bg-transparent border border-gray-500 text-black text-xs px-4 font-semibold py-2 rounded hover:bg-gray-600 hover:text-white transition bg-white"
             onClick={() => {
               setShowExcelContent(!showExcelContent);
               if (!showExcelContent) fetchExcelUrls();
@@ -270,159 +337,45 @@ const UrlReview = () => {
           </button>
 
           {showExcelContent && (
-            <div>
-            <div className="flex space-x-2 my-4">
-
-              <button
-                className={tableClasses.transButton}
-                onClick={toggleAllExcelUrls}
-              >
-                {selectedExcelUrls.length === excelUrls.length ? 'Deselect All' : 'Select All'}
-              </button>
-              <button
-                className={tableClasses.formButton}
-                onClick={handleAddAllUrls}
-              >
-                Select All and Add to Database
-              </button>
-
-              </div>
-              
-              <table className={tableClasses.table}>
-              <thead className={tableClasses.tableHeader}>
-                  <tr>
-                    <th className={tableClasses.tableHeader + " w-1/6"}>Select</th>
-                    <th className={tableClasses.tableHeader + " w-5/6"}>URL</th>
-                  </tr>
-                </thead>
-                <tbody className={tableClasses.tableBody}>
-                  {excelUrls.length > 0 ? excelUrls.map((url, index) => (
-                    <tr key={index} className={tableClasses.tableRow}>
-                      <td className={tableClasses.tableCell}>
-                        <input
-                          type="checkbox"
-                          checked={selectedExcelUrls.includes(url)}
-                          onChange={() => toggleExcelUrlSelection(url)}
-                        />
-                      </td>
-                      <td className={tableClasses.tableCell}>{url}</td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan="2" className="text-center py-4">No new URLs found in Excel</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              {excelUrls.length > 0 && (
-                <button
-                  className={tableClasses.transButton}
-                  onClick={handleAddSelectedUrls}
-                >
-                  Add Selected URLs
-                </button>
-              )}
-            </div>
+            <ExcelUrlList
+              urls={excelUrls}
+              selectedUrls={selectedExcelUrls}
+              onSelectUrl={toggleExcelUrlSelection}
+              onSelectAll={toggleAllExcelUrls}
+              onAddSelected={handleAddSelectedUrls}
+              onAddAll={handleAddAllUrls}
+            />
           )}
 
-          <h2 className={tableClasses.h2 + " mt-4"}>Not Reviewed Pages</h2>
-          <table className={tableClasses.table}>
-            <thead className={tableClasses.tableHeader}>
-              <tr>
-                <th className={tableClasses.tableHeader + " w-1/12"}>Done</th>
-                <th className={tableClasses.tableHeader + " w-1/12"}>Semrush</th>
-                <th className={tableClasses.tableHeader + " w-8/12 text-left px-2"}>URL</th>
-                <th className={tableClasses.tableHeader + " w-2/12"}>Delete</th>
-              </tr>
-            </thead>
-            <tbody className={tableClasses.tableBody}>
-              {notReviewedUrls.length > 0 ? notReviewedUrls.map((url) => (
-                <tr key={url.id} className={tableClasses.tableRow}>
-                  <td className={tableClasses.tableCell}>
-                    <button onClick={() => handleReviewToggle(url.id, false)}>
-                    <Check className={tableClasses.checkIcon} strokeWidth={3} />
-                    </button>
-                  </td>
-                  <td className={tableClasses.tableCell}>
-                  <a 
-  href={`https://sr.toolsminati.com/analytics/organic/overview/?db=us&q=${url.url}&searchType=subfolder`} 
-  target="_blank" 
-  rel="noopener noreferrer"
->
-  <ChartNoAxesGantt className={tableClasses.chartIcon} strokeWidth={3} />
-</a>
+          <h2 className="text-xl font-bold mt-8 mb-4">Not Reviewed Pages</h2>
+          <TableComponent
+            columns={notReviewedColumns}
+            data={notReviewedUrls}
+            keyField="id"
+            onDelete={handleDelete}
+            selectable={false}
+            selectedItems={selectedNotReviewedItems}
+            onSelectChange={setSelectedNotReviewedItems}
+          />
 
-                  </td>
-                  <td className={tableClasses.tableTitle}>
-                      <a href={url.url} target="_blank" rel="noopener noreferrer">{formatUrl(url.url)}</a>
-                  </td>
-                  <td className={tableClasses.tableCell}>
-                    <button onClick={() => handleDelete(url.id)} className={tableClasses.deleteIcon}>
-                    <Trash2 className={tableClasses.deleteIcon} strokeWidth={2} />
-                    </button>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan="4" className="text-center py-4">No more URLs available</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          <h2 className={tableClasses.h2 + " mt-4"}>Reviewed Pages</h2>
+          <h2 className="text-xl font-bold mt-8 mb-4">Reviewed Pages</h2>
           <button
-            className={tableClasses.transButton + " mb-6"}
+            className="bg-transparent border border-gray-500 text-black text-xs px-4 font-semibold py-2 rounded hover:bg-gray-600 hover:text-white transition bg-white mb-4"
             onClick={() => setShowReviewed(!showReviewed)}
           >
             {showReviewed ? 'Hide Reviewed' : 'Show Reviewed'}
           </button>
 
           {showReviewed && (
-            <table className={tableClasses.table}>
-              <thead className={tableClasses.tableHeader}>
-                <tr>
-                <th className={tableClasses.tableHeader + " w-1/12"}>Done</th>
-                <th className={tableClasses.tableHeader + " w-1/12"}>Semrush</th>
-                <th className={tableClasses.tableHeader + " w-8/12 text-left px-2"}>URL</th>
-                <th className={tableClasses.tableHeader + " w-2/12"}>Delete</th>
-                </tr>
-              </thead>
-              <tbody className={tableClasses.tableBody}>
-                {reviewedUrls.length > 0 ? reviewedUrls.map((url) => (
-                  <tr key={url.id} className={tableClasses.tableRow}>
-                    <td className={tableClasses.tableCell}>
-                      <button onClick={() => handleReviewToggle(url.id, true)}>
-                      <Check className={tableClasses.checkIcon} strokeWidth={3} />
-                      </button>
-                    </td>
-                    <td className={tableClasses.tableCell}>
-                    <a 
-  href={`https://sr.toolsminati.com/analytics/organic/overview/?db=us&q=${url.url}&searchType=subfolder`} 
-  target="_blank" 
-  rel="noopener noreferrer"
->
-  <ChartNoAxesGantt className={tableClasses.chartIcon} strokeWidth={3} />
-</a>
-                    </td>
-                    <td className={tableClasses.tableTitle}>
-                      <a href={url.url} target="_blank" rel="noopener noreferrer">
-                        {formatUrl(url.url)}
-                      </a>
-                    </td>
-                    <td className={tableClasses.tableCell}>
-                      <button onClick={() => handleDelete(url.id)}>
-                      <Trash2 className={tableClasses.deleteIcon} strokeWidth={2} />
-                      </button>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="4" className="text-center py-4">No reviewed URLs available</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <TableComponent
+              columns={reviewedColumns}
+              data={reviewedUrls}
+              keyField="id"
+              onDelete={handleDelete}
+              selectable={false}
+              selectedItems={selectedReviewedItems}
+              onSelectChange={setSelectedReviewedItems}
+            />
           )}
         </>
       )}

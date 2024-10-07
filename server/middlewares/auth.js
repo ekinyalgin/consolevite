@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const pool = require('../config/db');
+const pool = require('../config/dbold');
 
 // Kullanıcı kimlik doğrulaması (hem normal hem admin için)
 const authorize = async (req, res, next) => {

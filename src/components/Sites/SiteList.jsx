@@ -1,33 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import BulkUpdateVisitors from './BulkUpdateVisitors'; 
-import tableClasses from '../../utils/tableClasses';
-import { CheckSquare, Eye, Download, Edit, Trash2, Settings, FileText } from 'lucide-react';
+import TableComponent from '../common/TableComponent';
+import { Download, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BulkUpdateVisitors from './BulkUpdateVisitors';
+import SiteListActions from './SiteListActions';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const SiteList = ({ sites, setSites, onNotification, onEditSite, refreshKey }) => {
+const SiteList = ({ onNotification, onEditSite, refreshKey }) => {
+  const [sites, setSites] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(localStorage.getItem('activeCategory') || null);
-  const [selectedSites, setSelectedSites] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [showBulkUpdate, setShowBulkUpdate] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const token = localStorage.getItem('token');
-  const [languages, setLanguages] = useState([]);
-  const [allSelected, setAllSelected] = useState(false);
 
   useEffect(() => {
     fetchCategories();
-    fetchLanguages();
   }, []);
-
 
   useEffect(() => {
     if (activeCategory) {
       fetchSitesByCategory(activeCategory);
     }
   }, [activeCategory, refreshKey]);
-
 
   const fetchCategories = async () => {
     try {
@@ -43,42 +42,6 @@ const SiteList = ({ sites, setSites, onNotification, onEditSite, refreshKey }) =
     }
   };
 
-
-
-  const fetchLanguages = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/sites/languages`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setLanguages(response.data);
-    } catch (error) {
-      onNotification('Error fetching languages', 'error');
-    }
-  };
-
-  const handleDownload = async (domainName, language, monthlyVisitors) => {
-    try {
-      const response = await axios.get(`${API_URL}/excel/download/${domainName}`, {
-        params: { language, monthlyVisitors },
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch (error) {
-      onNotification('Error while downloading the file', 'error');
-    }
-  };
-
-  const fetchExcelUrls = async (domainName) => {
-    try {
-      const response = await axios.get(`${API_URL}/excel/content/${domainName}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching Excel URLs:', error);
-      return [];
-    }
-  };
-
   const fetchSitesByCategory = async (category) => {
     try {
       const response = await axios.get(`${API_URL}/sites`, {
@@ -86,15 +49,13 @@ const SiteList = ({ sites, setSites, onNotification, onEditSite, refreshKey }) =
       });
 
       const filteredSites = response.data.filter(site => site.category === category);
-      
+
       const sitesWithReviewStatus = await Promise.all(filteredSites.map(async (site) => {
-        // Excel dosyasının olup olmadığını ve URL durumunu kontrol edin
         const checkResponse = await axios.get(`${API_URL}/excel/check-excel/${site.domain_name}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const hasExcelFile = checkResponse.data.hasFile;
 
-        // URL'leri kontrol etme (not reviewed kısmında URL var mı?)
         const urlStatusResponse = await axios.get(`${API_URL}/urls/status/${site.domain_name}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -115,51 +76,15 @@ const SiteList = ({ sites, setSites, onNotification, onEditSite, refreshKey }) =
     }
   };
 
-
-  const handleCheckboxChange = (site) => {
-    if (selectedSites.some(selected => selected.id === site.id)) {
-      setSelectedSites(selectedSites.filter(selected => selected.id !== site.id));
-    } else {
-      setSelectedSites([...selectedSites, site]);
-    }
-  };
-
-  const handleSelectAll = () => {
-    if (allSelected) {
-      setSelectedSites([]);
-    } else {
-      setSelectedSites([...sites]);
-    }
-    setAllSelected(!allSelected);
-  };
-
-  useEffect(() => {
-    setAllSelected(selectedSites.length === sites.length);
-  }, [selectedSites, sites]);
-
-  const handleBulkDownload = async () => {
-    if (selectedSites.length === 0) {
-      onNotification('Please select at least one site', 'error');
-      return;
-    }
-
+  const handleDownload = async (domainName, language, monthlyVisitors) => {
     try {
-      await axios.post(`${API_URL}/excel/download-multiple`, 
-        { 
-          sites: selectedSites.map(site => ({
-            domainName: site.domain_name,
-            language: site.language,
-            monthlyVisitors: site.monthly_visitors
-          }))
-        }, 
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-
-      onNotification('Bulk download started successfully', 'success');
+      await axios.get(`${API_URL}/excel/download/${domainName}`, {
+        params: { language, monthlyVisitors },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      onNotification('File downloaded successfully', 'success');
     } catch (error) {
-      onNotification('Error during bulk download', 'error');
+      onNotification('Error while downloading the file', 'error');
     }
   };
 
@@ -175,46 +100,88 @@ const SiteList = ({ sites, setSites, onNotification, onEditSite, refreshKey }) =
         onNotification('Site deleted successfully', 'success');
       } catch (error) {
         onNotification('Error deleting site', 'error');
-        setSites(originalSites); // Hata durumunda listeyi geri yükleyin
+        setSites(originalSites);
       }
     }
   };
 
+  const columns = [
+    { 
+      key: 'domain_name', 
+      label: 'Domain Name',
+      render: (value, item) => (
+        <Link 
+          to={`/url-review/${value}`} 
+          className={`${item.hasNotReviewed ? 'underline' : ''} text-black hover:text-black`}
+        >
+          {value}
+        </Link>
+      )
+    },
+    { key: 'monthly_visitors', label: 'Monthly', className: "text-center",
+      render: (value) => (
+        <div className="text-center text-xs">{value}</div>
+      ) },
+    { key: 'language', label: 'Language', className: "text-center", 
+      render: (value) => (
+        <div className="text-center">{value}</div>
+      )
+    },
+    { 
+      key: 'download', 
+      label: 'Download',
+      className: "text-center",
+      render: (_, item) => (
+        <button className="w-full" onClick={() => handleDownload(item.domain_name, item.language, item.monthly_visitors)}>
+          <Download className="w-4 h-4 mx-auto text-center text-gray-500 hover:text-gray-700" strokeWidth={2} />
+        </button>
+      )
+    },
+  ];
 
+  const handleBulkDownload = async () => {
+    setIsDownloading(true);
+    try {
+      const sitesToDownload = selectedItems.map(id => {
+        const site = sites.find(s => s.id === id);
+        return {
+          domainName: site.domain_name,
+          language: site.language,
+          monthlyVisitors: site.monthly_visitors
+        };
+      });
 
+      await axios.post(`${API_URL}/excel/download-multiple`, { sites: sitesToDownload }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-  const handleEditClick = (site) => {
-    onEditSite(site);
+      onNotification('Bulk download started successfully', 'success');
+    } catch (error) {
+      onNotification('Error starting bulk download', 'error');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
-  const handleAddAllNewUrls = async () => {
+  const handleAddUrls = async () => {
+    setIsLoading(true);
     try {
-      const sitesWithExcel = sites.filter(site => site.hasExcelFile);
-      for (const site of sitesWithExcel) {
-        const excelUrls = await fetchExcelUrls(site.domain_name);
-        const dbUrlsResponse = await axios.get(`${API_URL}/urls/${site.domain_name}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const dbUrls = [...dbUrlsResponse.data.notReviewed, ...dbUrlsResponse.data.reviewed].map(url => url.url);
-        const newUrls = excelUrls.filter(url => !dbUrls.includes(url));
-        if (newUrls.length > 0) {
-          await axios.post(`${API_URL}/urls/add-urls/${site.domain_name}`, 
-            { urls: newUrls }, 
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          // Delete the Excel file after adding URLs
-          await axios.delete(`${API_URL}/excel/delete/${site.domain_name}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-        }
-      }
-      onNotification('New URLs from Excel files added to the database and Excel files deleted', 'success');
-      fetchSitesByCategory(activeCategory); // Refresh the site list
+      const sitesToProcess = selectedItems.map(id => {
+        const site = sites.find(s => s.id === id);
+        return { id: site.id, domainName: site.domain_name };
+      });
+
+      const response = await axios.post(`${API_URL}/excel/add-urls-and-delete`, 
+        { sites: sitesToProcess },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      onNotification('URLs added successfully', 'success');
+      fetchSitesByCategory(activeCategory);
     } catch (error) {
-      console.error('Error adding new URLs from Excel files to the database:', error);
-      onNotification('Error adding new URLs from Excel files to the database', 'error');
+      onNotification('Error adding URLs', 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -227,8 +194,8 @@ const SiteList = ({ sites, setSites, onNotification, onEditSite, refreshKey }) =
               <button
                 className={`inline-block p-2 text-gray-400 font-semibold text-xs ${
                   activeCategory === category.name
-                    ? 'text-gray-800 border-b-2 text-black border-gray-600'
-                    : 'hover:text-gray-600 hover:border-gray-300'
+                    ? 'text-gray-800 border-b-2 border-gray-600'
+                    : 'hover:text-gray-600'
                 }`}
                 onClick={() => setActiveCategory(category.name)}
               >
@@ -245,98 +212,31 @@ const SiteList = ({ sites, setSites, onNotification, onEditSite, refreshKey }) =
         </button>
       </div>
 
-      {/* BulkUpdateVisitors Bileşeni */}
       {showBulkUpdate && (
         <BulkUpdateVisitors
           activeCategory={activeCategory}
           onNotification={onNotification}
+          onBulkUpdate={() => fetchSitesByCategory(activeCategory)}
         />
       )}
 
-      {/* Site Tablosu */}
-      <table className={tableClasses.table}>
-        <thead className={tableClasses.tableHeader}>
-        <tr>
-            <th className={tableClasses.tableHeader + " w-1/12"}>
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={handleSelectAll}
-              />
-            </th>
-            <th className={tableClasses.tableHeader + " w-3/12 text-left px-2"}>Domain Name</th>
-            <th className={tableClasses.tableHeader + " w-2/12"}>Monthly</th>
-            <th className={tableClasses.tableHeader + " w-2/12"}>Lang</th>
-            <th className={tableClasses.tableHeader + " w-2/12"}>DL</th>
-            <th className={tableClasses.tableHeader + " w-2/12"}>Actions</th>
-          </tr>
-        </thead>
-        <tbody className={tableClasses.tableBody}>
-          {sites.map((site) => (
-            <tr key={site.id} className={tableClasses.tableRow}>
-              <td className={tableClasses.tableCell}>
-                <input
-                  type="checkbox"
-                  checked={selectedSites.some(selected => selected.id === site.id)}
-                  onChange={() => handleCheckboxChange(site)}
-                />
-              </td>
-              <td className={tableClasses.tableTitle}>
-              {site.hasNotReviewed ? (
-                    <Link to={`/url-review/${site.domain_name}`} className="underline">
-                      {site.domain_name}
-                    </Link>
-                  ) : (
-                    <span>{site.domain_name}</span>
-                  )}
-              </td>
-              <td className={tableClasses.tableCell}>{site.monthly_visitors}</td>
-              <td className={tableClasses.tableCell}>{site.language}</td>
-              <td className={tableClasses.tableCell}>
-              <button onClick={() => handleDownload(site.domain_name, site.language, site.monthly_visitors)}>
-                      <Download className={tableClasses.downloadIcon} strokeWidth={2} />
-                    </button>
+      <TableComponent
+        columns={columns}
+        data={sites}
+        keyField="id"
+        onEdit={onEditSite}
+        onDelete={handleDelete}
+        selectable={true}
+        selectedItems={selectedItems}
+        onSelectChange={setSelectedItems}
+      />
 
-              </td>
-              <td className={tableClasses.tableCell}>
-                <div className="flex items-center justify-center space-x-2 h-full">
-              
-                  <button onClick={() => handleEditClick(site)}>
-                    <Edit className={tableClasses.editIcon} strokeWidth={2}  />
-                  </button>
-                  <button onClick={() => handleDelete(site.id)}>
-                    <Trash2 className={tableClasses.deleteIcon} strokeWidth={2}  />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-          {sites.length === 0 && (
-            <tr>
-              <td colSpan="7" className="text-center py-4">
-                No sites available for this category
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-            <div className="mt-4 flex items-center space-x-4">
-        <button 
-          onClick={handleBulkDownload}
-          className={tableClasses.transButton}
-        >
-          Download Report
-        </button>
-      
-
-        <button 
-          onClick={handleAddAllNewUrls}
-          className={tableClasses.transButton}
-        >
-          Add URLs
-        </button>
-      </div>
+      <SiteListActions 
+        onBulkDownload={handleBulkDownload}
+        onAddUrls={handleAddUrls}
+        isDownloading={isDownloading}
+        isAddingUrls={isLoading}
+      />
     </div>
   );
 };

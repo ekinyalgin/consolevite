@@ -1,17 +1,16 @@
-// components/Sites/SiteForm.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import tableClasses from '../../utils/tableClasses';
+import FormComponent from '../common/FormComponent';
 import LanguagePopup from './LanguagePopup';
 import CategoryPopup from './CategoryPopup';
-import { XCircle, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {
   const [formData, setFormData] = useState({
-    domainName: '',
-    monthlyVisitors: '',
+    domain_name: '',
+    monthly_visitors: '',
     language: '',
     category: ''
   });
@@ -29,8 +28,8 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {
   useEffect(() => {
     if (initialData) {
       setFormData({
-        domainName: initialData.domain_name || '',
-        monthlyVisitors: initialData.monthly_visitors || '',
+        domain_name: initialData.domain_name || '',
+        monthly_visitors: initialData.monthly_visitors || '',
         language: initialData.language || '',
         category: initialData.category || '',
       });
@@ -61,122 +60,111 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  const handleChange = (name, value) => {
+    setFormData(prevData => ({ ...prevData, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Boş alanları kontrol et
-    if (!formData.domainName.trim() || !formData.monthlyVisitors || !formData.language || !formData.category) {
+    if (!formData.domain_name.trim() || !formData.monthly_visitors || !formData.language || !formData.category) {
       onNotification('All fields are required', 'error');
       return;
     }
 
     const submittedData = {
       id: initialData?.id,
-      domain_name: formData.domainName.trim(),
-      monthly_visitors: parseInt(formData.monthlyVisitors, 10),
+      domain_name: formData.domain_name.trim(),
+      monthly_visitors: parseInt(formData.monthly_visitors, 10),
       language: formData.language,
       category: formData.category
     };
-
-    console.log('Submitting data:', submittedData); // Debugging için
 
     onSubmit(submittedData);
   };
 
   const resetForm = () => {
     setFormData({
-      domainName: '',
-      monthlyVisitors: '',
+      domain_name: '',
+      monthly_visitors: '',
       language: '',
       category: ''
     });
     onCancel();
   };
 
-  return (
-    <form onSubmit={handleSubmit} className={tableClasses.formContainer}>
-      <input
-        type="text"
-        name="domainName"
-        value={formData.domainName}
-        onChange={handleInputChange}
-        className={`${tableClasses.formInput} w-full`}
-        placeholder="Domain Name"
-        required
-      />
-      <input
-        type="number"
-        name="monthlyVisitors"
-        value={formData.monthlyVisitors}
-        onChange={handleInputChange}
-        className={`${tableClasses.formInput} w-full`}
-        placeholder="Monthly Visitors"
-        required
-      />
-      <div className="flex items-center space-x-2">
-        <select
-          name="language"
-          value={formData.language}
-          onChange={handleInputChange}
-          className={`${tableClasses.formInput} w-3/4`}
-          required
-        >
-          <option value="">Select Language</option>
-          {languages.map((lang) => (
-            <option key={lang.id} value={lang.name}>{lang.name}</option>
-          ))}
-        </select>
-        <button 
-          type="button" 
-          onClick={() => setShowLanguagePopup(true)} 
-          className={`${tableClasses.addButton} w-1/4 flex items-center justify-center`}
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-      </div>
-      <div className="flex items-center space-x-2">
-        <select
-          name="category"
-          value={formData.category}
-          onChange={handleInputChange}
-          className={`${tableClasses.formInput} w-3/4`}
-          required
-        >
-          <option value="">Select Category</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.name}>{cat.name}</option>
-          ))}
-        </select>
-        <button 
-          type="button" 
-          onClick={() => setShowCategoryPopup(true)} 
-          className={`${tableClasses.addButton} w-1/4 flex items-center justify-center`}
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-      </div>
-      <div className="flex space-x-2">
-        <button
-          type="submit"
-          className={`${tableClasses.formButton} ${initialData ? 'w-4/6' : 'w-full'}`}
-        >
-          {initialData ? 'Update' : 'Add'} Site
-        </button>
-        {initialData && (
-          <button
-            type="button"
-            onClick={resetForm}
-            className={`${tableClasses.formButton} w-2/6 flex items-center justify-center`}
+  const fields = [
+    { name: 'domain_name', label: 'Domain Name', type: 'text', required: true },
+    { name: 'monthly_visitors', label: 'Monthly Visitors', type: 'number', required: true },
+    { 
+      name: 'language', 
+      label: 'Language', 
+      type: 'custom',
+      required: true,
+      render: (value, onChange) => (
+        <div className="flex items-center space-x-2">
+          <select
+            value={value}
+            onChange={(e) => onChange('language', e.target.value)}
+            className="text-sm text-gray-400 w-4/5 p-2 border rounded"
+            required
           >
-            <XCircle className="w-4 h-4" />
+            <option value="">Select Language</option>
+            {languages.map((lang) => (
+              <option key={lang.id} value={lang.name}>{lang.name}</option>
+            ))}
+          </select>
+          <button 
+            type="button" 
+            onClick={() => setShowLanguagePopup(true)} 
+            className="w-1/5 h-9 bg-blue-500 text-white rounded flex items-center justify-center"
+          >
+            <Plus className="w-4 h-4" />
           </button>
-        )}
-      </div>
+        </div>
+      )
+    },
+    { 
+      name: 'category', 
+      label: 'Category', 
+      type: 'custom',
+      required: true,
+      render: (value, onChange) => (
+        <div className="flex items-center space-x-2">
+          <select
+            value={value}
+            onChange={(e) => onChange('category', e.target.value)}
+            className="text-sm text-gray-400 w-4/5 p-2 border rounded"
+            required
+          >
+            <option value="">Select Category</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.name}>{cat.name}</option>
+            ))}
+          </select>
+          <button 
+            type="button" 
+            onClick={() => setShowCategoryPopup(true)} 
+            className="w-1/5 h-9 p-2 bg-blue-500 text-white rounded flex items-center justify-center"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      )
+    },
+  ];
+
+  return (
+    <>
+      <FormComponent
+        formData={formData}
+        fields={fields}
+        title="Site"
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        onCancel={resetForm}
+        isEdit={!!initialData}
+      />
 
       {showLanguagePopup && (
         <LanguagePopup
@@ -193,7 +181,7 @@ const SiteForm = ({ onSubmit, onCancel, initialData, onNotification }) => {
           onCategoryChange={fetchCategories}
         />
       )}
-    </form>
+    </>
   );
 };
 

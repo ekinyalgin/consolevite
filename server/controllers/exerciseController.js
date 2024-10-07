@@ -1,10 +1,10 @@
-// controllers/exerciseController.js
-const db = require('../config/db'); 
+const Exercise = require('../models/exercise');
+
 
 // Tüm egzersizleri getirme
 exports.getAllExercises = async (req, res) => {
   try {
-    const [exercises] = await db.query('SELECT * FROM exercises'); // Tüm egzersizleri çek
+    const exercises = await Exercise.findAll(); // Sequelize 'findAll' kullanıyoruz
     res.status(200).json(exercises);
   } catch (error) {
     console.error("Error fetching exercises:", error);
@@ -16,11 +16,11 @@ exports.getAllExercises = async (req, res) => {
 exports.getExerciseById = async (req, res) => {
   const { id } = req.params;
   try {
-    const [exercise] = await db.query('SELECT * FROM exercises WHERE id = ?', [id]); // ID'ye göre çek
-    if (exercise.length === 0) {
+    const exercise = await Exercise.findByPk(id); // Sequelize 'findByPk' kullanıyoruz
+    if (!exercise) {
       return res.status(404).json({ message: 'Exercise not found' });
     }
-    res.status(200).json(exercise[0]);
+    res.status(200).json(exercise);
   } catch (error) {
     console.error("Error fetching exercise:", error);
     res.status(500).json({ message: 'Failed to fetch exercise' });
@@ -30,16 +30,13 @@ exports.getExerciseById = async (req, res) => {
 // Yeni bir egzersiz oluşturma
 exports.createExercise = async (req, res) => {
   const { title, duration, description, video_url } = req.body;
-  
+
   if (!title || !duration) {
     return res.status(400).json({ message: 'Title and duration are required' });
   }
 
   try {
-    const [result] = await db.query('INSERT INTO exercises (title, duration, description, video_url) VALUES (?, ?, ?, ?)', 
-      [title, duration, description, video_url]);
-    
-    const newExercise = { id: result.insertId, title, duration, description, video_url };
+    const newExercise = await Exercise.create({ title, duration, description, video_url }); // Sequelize 'create' kullanıyoruz
     res.status(201).json(newExercise);
   } catch (error) {
     console.error("Error creating exercise:", error);
@@ -57,16 +54,18 @@ exports.updateExercise = async (req, res) => {
   }
 
   try {
-    const [result] = await db.query(
-      'UPDATE exercises SET title = ?, duration = ?, description = ?, video_url = ? WHERE id = ?', 
-      [title, duration, description, video_url, id]
-    );
-
-    if (result.affectedRows === 0) {
+    const exercise = await Exercise.findByPk(id);
+    if (!exercise) {
       return res.status(404).json({ message: 'Exercise not found' });
     }
 
-    res.status(200).json({ id, title, duration, description, video_url });
+    exercise.title = title;
+    exercise.duration = duration;
+    exercise.description = description;
+    exercise.video_url = video_url;
+
+    await exercise.save(); // Veritabanında güncelleme
+    res.status(200).json(exercise);
   } catch (error) {
     console.error("Error updating exercise:", error);
     res.status(500).json({ message: 'Failed to update exercise' });
@@ -77,12 +76,12 @@ exports.updateExercise = async (req, res) => {
 exports.deleteExercise = async (req, res) => {
   const { id } = req.params;
   try {
-    const [result] = await db.query('DELETE FROM exercises WHERE id = ?', [id]);
-
-    if (result.affectedRows === 0) {
+    const exercise = await Exercise.findByPk(id);
+    if (!exercise) {
       return res.status(404).json({ message: 'Exercise not found' });
     }
 
+    await exercise.destroy(); // Veritabanından silme
     res.status(200).json({ message: 'Exercise deleted successfully' });
   } catch (error) {
     console.error("Error deleting exercise:", error);

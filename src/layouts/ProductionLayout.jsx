@@ -3,7 +3,6 @@ import { Outlet } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import tableClasses from "../utils/tableClasses";
 import { LoaderCircle } from 'lucide-react';
 
 const ProductionLayout = () => {
@@ -22,12 +21,12 @@ const ProductionLayout = () => {
             </div>
           ) : !user || (user.role !== 'admin' && user.role !== 'emine') ? (
             <div className="container mx-auto p-4">
-              <h1 className={tableClasses.h1}>Unauthorized Access</h1>
+              <h1>Unauthorized Access</h1>
               <p>Sorry, you don't have permission to view this page. Only administrators and Emine can access this area.</p>
             </div>
           ) : (
             <>
-              <h1 className={tableClasses.h1}>Production</h1>
+              <h1>Production</h1>
               <Outlet />
             </>
           )}

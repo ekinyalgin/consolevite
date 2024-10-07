@@ -10,5 +10,6 @@ router.get('/content/:domainName', authorize, isAdmin, excelController.getExcelC
 router.get('/download/:domainName', excelController.downloadExcel);
 router.post('/download-multiple', authorize, isAdmin, excelController.bulkDownloadReports);
 router.delete('/delete/:domainName', authorize, isAdmin, excelController.deleteExcelFile); // New route for deleting Excel file
+router.post('/add-urls-and-delete', authorize, isAdmin, excelController.addUrlsFromExcelAndDelete);
 
 module.exports = router;

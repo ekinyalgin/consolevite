@@ -1,138 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import tableClasses from '../../utils/tableClasses';
-import { XCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import FormComponent from '../common/FormComponent'; // Ortak form bileşeni
 
-const VideoForm = ({ fetchVideos, selectedVideo, showNotification, resetForm, setVideos, videos }) => {
-    const [title, setTitle] = useState('');
-    const [url, setUrl] = useState('');
-    const [note, setNote] = useState('');
+const VideoForm = ({ selectedVideo, onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    url: '',
+    note: ''
+  });
 
-    useEffect(() => {
-        if (selectedVideo) {
-            setTitle(selectedVideo.title || '');
-            setUrl(selectedVideo.url || '');
-            setNote(selectedVideo.note || '');
-        } else {
-            setTitle('');
-            setUrl('');
-            setNote('');
-        }
-    }, [selectedVideo]);
+  const [isEditing, setIsEditing] = useState(false);
 
+  // Formun ilk yüklenmesi ya da seçilen video değiştiğinde form verilerini ayarla
+  useEffect(() => {
+    if (selectedVideo) {
+      setFormData({
+        title: selectedVideo.title || '',
+        url: selectedVideo.url || '',
+        note: selectedVideo.note || ''
+      });
+      setIsEditing(true); // Eğer bir video seçilmişse, düzenleme moduna geç
+    } else {
+      resetForm(); // Eğer seçilen video yoksa, formu sıfırla
+    }
+  }, [selectedVideo]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  // Form alanlarındaki değişiklikleri yönetir
+  const handleChange = (name, value) => {
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
 
-        const method = selectedVideo ? 'PUT' : 'POST';
-        const urlEndpoint = selectedVideo
-            ? `${import.meta.env.VITE_API_URL}/videos/${selectedVideo.id}`
-            : `${import.meta.env.VITE_API_URL}/videos`;
+  // Formun gönderilmesi (Kaydetme işlemi)
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-        const videoData = {
-            title,
-            url,
-            note,
-        };
+    // URL doğrulaması
+    const urlPattern = /^(https?:\/\/)([\w\d-]+\.)+[\w\d]{2,}(\/.*)?$/;
+    if (!urlPattern.test(formData.url)) {
+      alert('Please enter a valid URL.');
+      return;
+    }
 
-        if (selectedVideo) {
-            videoData.done = selectedVideo.done;
-        }
+    const formToSubmit = { ...formData };
+    if (selectedVideo && selectedVideo.id) {
+      formToSubmit.id = selectedVideo.id; // Eğer seçilen video varsa, ID eklenir
+    }
+    onSave(formToSubmit); // Kaydetme işlevini tetikleme
+    setIsEditing(false); // Kaydetme işleminden sonra düzenleme modundan çık
+  };
 
-        let tempId = `temp-${Math.random()}`; // Geçici bir ID oluştur
+  // Formu sıfırlama ve düzenleme modundan çıkma işlevi
+  const resetForm = () => {
+    setFormData({ title: '', url: '', note: '' });
+    setIsEditing(false);
+    if (onCancel) {
+      onCancel(); // Eğer onCancel işlevi varsa, çağrılır
+    }
+  };
 
-        // Optimistik güncelleme: UI'ya hemen ekle veya güncelle
-        if (!selectedVideo) {
-            setVideos([...videos, { ...videoData, id: tempId }]); // Yeni video ekliyoruz
-        } else {
-            setVideos(videos.map(video => 
-                video.id === selectedVideo.id ? { ...video, ...videoData } : video
-            )); // Güncelleme yapıyoruz
-        }
+  // Form alanlarının tanımlandığı dizi
+  const fields = [
+    { name: 'title', label: 'Title', type: 'text', required: true },
+    { name: 'url', label: 'URL', type: 'url', required: true },
+    { name: 'note', label: 'Note', type: 'textarea', rows: 3 }
+  ];
 
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(urlEndpoint, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(videoData),
-            });
-
-            if (response.ok) {
-                const savedVideo = await response.json();
-                
-                // Sunucu yanıtı geldiğinde optimistik güncellemeyi kesinleştir
-                setVideos(prevVideos => prevVideos.map(video => 
-                    video.id === tempId ? savedVideo : video // Yeni eklenen video için
-                ));
-
-                showNotification(selectedVideo ? 'Video updated successfully' : 'Video added successfully', 'success');
-                resetForm();
-            } else {
-                const errorData = await response.json();
-                showNotification(`Failed to ${selectedVideo ? 'update' : 'add'} video: ${errorData.error || 'Unknown error'}`, 'error');
-                
-                // Hata durumunda optimistik değişiklikleri geri alın
-                if (!selectedVideo) {
-                    setVideos(videos.filter(video => video.id !== tempId));
-                }
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showNotification(`Failed to ${selectedVideo ? 'update' : 'add'} video: ${error.message}`, 'error');
-
-            // Hata durumunda optimistik değişiklikleri geri alın
-            if (!selectedVideo) {
-                setVideos(videos.filter(video => video.id !== tempId));
-            }
-        }
-    };
-
-    
-
-    return (
-        <form onSubmit={handleSubmit} className={tableClasses.formContainer + " space-y-4"}>
-            <input
-                type="text"
-                placeholder="Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                className={`${tableClasses.formInput} w-full`}
-            />
-            <input
-                type="url"
-                placeholder="URL"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                required
-                className={`${tableClasses.formInput} w-full`}
-            />
-            <textarea
-                placeholder="Note"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className={`${tableClasses.formInput} w-full`}
-                rows="3"
-            />
-            <div className="flex space-x-2">
-                <button type="submit" className={`${tableClasses.formButton} ${selectedVideo ? 'w-4/6' : 'w-full'}`}>
-                    {selectedVideo ? 'Update' : 'Add'} Video
-                </button>
-                {selectedVideo && (
-                    <button
-                        type="button"
-                        onClick={resetForm}
-                        className={`${tableClasses.formButton} w-2/6 flex items-center justify-center`}
-                    >
-                        <XCircle className="w-4 h-4" />
-                    </button>
-                )}
-            </div>
-        </form>
-    );
+  return (
+    <FormComponent
+      formData={formData}
+      fields={fields}
+      title="Video"
+      onChange={handleChange}
+      onSubmit={handleSubmit}
+      onCancel={resetForm} // Cancel işlemi formu sıfırlamak için
+      isEdit={isEditing} // isEditing state'ini kullanarak düzenleme modunu belirt
+    />
+  );
 };
 
 export default VideoForm;

@@ -1,14 +1,15 @@
 // components/ExcelViewer.js
 import React, { useState } from 'react';
 import axios from 'axios';
-import tableClasses from '../utils/tableClasses';
-import Notification from '../utils/Notification';
+import TableComponent from '../common/TableComponent';
+import Notification from '../../utils/Notification';
 import * as XLSX from 'xlsx';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const ExcelViewer = ({ domainName, onNotification }) => {
   const [excelData, setExcelData] = useState([]);
+  const [selectedItems, setSelectedItems] = useState([]);
   const token = localStorage.getItem('token');
 
   const handleFileUpload = (event) => {
@@ -21,7 +22,7 @@ const ExcelViewer = ({ domainName, onNotification }) => {
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const json = XLSX.utils.sheet_to_json(sheet);
-      setExcelData(json.map(row => row.URL || row.url)); // 'URL' veya 'url' olarak kabul ediyoruz
+      setExcelData(json.map(row => row.URL || row.url));
     };
 
     reader.readAsBinaryString(file);
@@ -33,11 +34,15 @@ const ExcelViewer = ({ domainName, onNotification }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       onNotification('URLs added successfully from Excel', 'success');
-      setExcelData([]); // Formu temizle
+      setExcelData([]);
     } catch (error) {
       onNotification('Error adding URLs from Excel', 'error');
     }
   };
+
+  const columns = [
+    { key: 'url', label: 'URL' },
+  ];
 
   return (
     <div className="mt-6">
@@ -53,10 +58,10 @@ const ExcelViewer = ({ domainName, onNotification }) => {
         type="file"
         accept=".xlsx, .xls"
         onChange={handleFileUpload}
-        className={tableClasses.formInput}
+        className="border border-gray-300 rounded p-2 mb-4"
       />
       <button
-        className="bg-blue-500 text-white px-4 py-2 mt-4 rounded hover:bg-blue-600"
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         onClick={handleAddUrls}
         disabled={excelData.length === 0}
       >
@@ -65,20 +70,14 @@ const ExcelViewer = ({ domainName, onNotification }) => {
 
       {excelData.length > 0 && (
         <div className="mt-4">
-          <table className={tableClasses.table}>
-            <thead className={tableClasses.tableHeader}>
-              <tr>
-                <th className={tableClasses.tableHeaderCell}>URL</th>
-              </tr>
-            </thead>
-            <tbody className={tableClasses.tableBody}>
-              {excelData.map((url, index) => (
-                <tr key={index} className={tableClasses.tableRow}>
-                  <td className={tableClasses.tableCell}>{url}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TableComponent
+            columns={columns}
+            data={excelData.map(url => ({ url }))}
+            keyField="url"
+            selectable={true}
+            selectedItems={selectedItems}
+            onSelectChange={setSelectedItems}
+          />
         </div>
       )}
     </div>

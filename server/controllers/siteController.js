@@ -1,156 +1,123 @@
-const pool = require('../config/db');
+const { Sequelize } = require('sequelize');
+const { Site, SiteLang, SiteCat } = require('../models');
 
+// Tüm siteleri getirme
 exports.getAllSites = async (req, res) => {
   try {
-    const [rows] = await pool.query(`
-      SELECT 
-        s.id, 
-        s.domain_name, 
-        s.monthly_visitors, 
-        s.created_at, 
-        s.updated_at,
-        (SELECT COUNT(*) FROM urls u WHERE u.domain_name = s.domain_name AND u.reviewed = 0) AS not_reviewed_pages,
-        (SELECT COUNT(*) FROM urls u WHERE u.domain_name = s.domain_name AND u.reviewed = 1) AS reviewed_pages,
-        l.id AS language_id,
-        l.name AS language,
-        c.id AS category_id,
-        c.name AS category
-      FROM sites s
-      LEFT JOIN site_languages sl ON s.id = sl.site_id
-      LEFT JOIN sites_langs l ON sl.language_id = l.id
-      LEFT JOIN site_categories sc ON s.id = sc.site_id
-      LEFT JOIN sites_cats c ON sc.category_id = c.id
-      ORDER BY s.monthly_visitors DESC
-    `);
-    res.json(rows);
+    const sites = await Site.findAll({
+      include: [
+        { 
+          model: SiteLang, 
+          as: 'languages', 
+          through: { attributes: [] },
+          attributes: ['id', 'name']
+        },
+        { 
+          model: SiteCat, 
+          as: 'categories', 
+          through: { attributes: [] },
+          attributes: ['id', 'name']
+        }
+      ],
+      order: [['monthly_visitors', 'DESC']],
+    });
+
+    // Transform the result to match the expected format
+    const transformedSites = sites.map(site => ({
+      ...site.toJSON(),
+      language: site.languages[0]?.name || null,
+      category: site.categories[0]?.name || null,
+    }));
+
+    res.json(transformedSites);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error', details: err.message });
   }
 };
 
+// Yeni bir site oluşturma
 exports.createSite = async (req, res) => {
   const { domain_name, monthly_visitors, language, category } = req.body;
   try {
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      
-      // Tüm gerekli alanların dolu olduğunu kontrol et
-      if (!domain_name || !monthly_visitors || !language || !category) {
-        throw new Error('All fields are required');
-      }
+    const site = await Site.create({ 
+      domain_name, 
+      monthly_visitors, 
+      not_reviewed_pages: 0, 
+      reviewed_pages: 0 
+    });
 
-      // Sites tablosuna yeni site ekle
-      const [result] = await connection.query(
-        'INSERT INTO sites (domain_name, monthly_visitors, not_reviewed_pages, reviewed_pages) VALUES (?, ?, 0, 0)',
-        [domain_name, monthly_visitors]
-      );
-      const siteId = result.insertId;
+    // Find or create language
+    const [siteLang] = await SiteLang.findOrCreate({ where: { name: language } });
+    await site.addLanguage(siteLang);
 
-      // Dil ekle
-      const [langResult] = await connection.query('SELECT id FROM sites_langs WHERE name = ?', [language]);
-      if (langResult.length > 0) {
-        await connection.query(
-          'INSERT INTO site_languages (site_id, language_id) VALUES (?, ?)',
-          [siteId, langResult[0].id]
-        );
-      } else {
-        throw new Error('Invalid language');
-      }
+    // Find or create category
+    const [siteCat] = await SiteCat.findOrCreate({ where: { name: category } });
+    await site.addCategory(siteCat);
 
-      // Kategori ekle
-      const [catResult] = await connection.query('SELECT id FROM sites_cats WHERE name = ?', [category]);
-      if (catResult.length > 0) {
-        await connection.query(
-          'INSERT INTO site_categories (site_id, category_id) VALUES (?, ?)',
-          [siteId, catResult[0].id]
-        );
-      } else {
-        throw new Error('Invalid category');
-      }
-      
-      await connection.commit();
-      res.status(201).json({ id: siteId, domain_name, monthly_visitors, language, category });
-    } catch (e) {
-      await connection.rollback();
-      throw e;
-    } finally {
-      connection.release();
-    }
+    // Fetch the created site with its associations
+    const createdSite = await Site.findByPk(site.id, {
+      include: [
+        { model: SiteLang, as: 'languages', through: { attributes: [] } },
+        { model: SiteCat, as: 'categories', through: { attributes: [] } }
+      ]
+    });
+
+    res.status(201).json({
+      ...createdSite.toJSON(),
+      language: createdSite.languages[0]?.name || null,
+      category: createdSite.categories[0]?.name || null,
+    });
   } catch (err) {
     console.error('Error creating site:', err);
     res.status(500).json({ error: 'Server error', details: err.message });
   }
 };
 
-// siteController.js - updateSite fonksiyonundaki güncelleme
+// Site güncelleme
 exports.updateSite = async (req, res) => {
-	const { id } = req.params;
-	const { domain_name, monthly_visitors, language, category } = req.body;
-	
-	try {
-		const connection = await pool.getConnection();
-		try {
-			await connection.beginTransaction();
-  
-			console.log('Updating site:', { id, domain_name, monthly_visitors, language, category });
-  
-			if (!domain_name || domain_name.trim() === '') {
-				throw new Error('domain_name cannot be null or empty');
-			}
-  
-			// Sites tablosunu güncelle
-			await connection.query(
-				'UPDATE sites SET domain_name = ?, monthly_visitors = ? WHERE id = ?',
-				[domain_name, monthly_visitors, id]
-			);
-  
-			// Dili güncelle
-			if (language) {
-				await connection.query('DELETE FROM site_languages WHERE site_id = ?', [id]);
-				const [langResult] = await connection.query('SELECT id FROM sites_langs WHERE name = ?', [language]);
-				if (langResult.length > 0) {
-					await connection.query(
-						'INSERT INTO site_languages (site_id, language_id) VALUES (?, ?)',
-						[id, langResult[0].id]
-					);
-				}
-			}
-  
-			// Kategoriyi güncelle
-			if (category) {
-				await connection.query('DELETE FROM site_categories WHERE site_id = ?', [id]);
-				const [categoryResult] = await connection.query('SELECT id FROM sites_cats WHERE name = ?', [category]);
-				if (categoryResult.length > 0) {
-					await connection.query(
-						'INSERT INTO site_categories (site_id, category_id) VALUES (?, ?)',
-						[id, categoryResult[0].id]
-					);
-				}
-			}
-  
-			await connection.commit();
-			
-			// Güncellenmiş siteyi getir ve yanıt olarak gönder
-			const [updatedSite] = await connection.query('SELECT * FROM sites WHERE id = ?', [id]);
-			res.json(updatedSite[0]);
-		} catch (e) {
-			await connection.rollback();
-			throw e;
-		} finally {
-			connection.release();
-		}
-	} catch (err) {
-		console.error('Error updating site:', err);
-		res.status(500).json({ error: 'Server error', details: err.message });
-	}
+  const { id } = req.params;
+  const { domain_name, monthly_visitors, language, category } = req.body;
+  try {
+    const site = await Site.findByPk(id);
+    if (!site) {
+      return res.status(404).json({ message: 'Site not found' });
+    }
+
+    // Site bilgilerini güncelle
+    site.domain_name = domain_name;
+    site.monthly_visitors = monthly_visitors;
+    await site.save();
+
+    // Dili güncelle
+    if (language) {
+      const siteLang = await SiteLang.findOne({ where: { name: language } });
+      await site.setLanguages([siteLang]);
+    }
+
+    // Kategoriyi güncelle
+    if (category) {
+      const siteCat = await SiteCat.findOne({ where: { name: category } });
+      await site.setCategories([siteCat]);
+    }
+
+    res.json(site);
+  } catch (err) {
+    console.error('Error updating site:', err);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
 };
 
+// Site silme
 exports.deleteSite = async (req, res) => {
   const { id } = req.params;
   try {
-    await pool.query('DELETE FROM sites WHERE id = ?', [id]);
+    const site = await Site.findByPk(id);
+    if (!site) {
+      return res.status(404).json({ message: 'Site not found' });
+    }
+
+    await site.destroy();
     res.json({ message: 'Site deleted successfully' });
   } catch (err) {
     console.error(err);
@@ -158,9 +125,10 @@ exports.deleteSite = async (req, res) => {
   }
 };
 
+// Dilleri getirme
 exports.getLanguages = async (req, res) => {
   try {
-    const [languages] = await pool.query('SELECT * FROM sites_langs');
+    const languages = await SiteLang.findAll();
     res.json(languages);
   } catch (err) {
     console.error(err);
@@ -168,22 +136,28 @@ exports.getLanguages = async (req, res) => {
   }
 };
 
+// Yeni bir dil oluşturma
 exports.createLanguage = async (req, res) => {
   const { name } = req.body;
   try {
-    const [result] = await pool.query('INSERT INTO sites_langs (name) VALUES (?)', [name]);
-    const [newLanguage] = await pool.query('SELECT * FROM sites_langs WHERE id = ?', [result.insertId]);
-    res.status(201).json(newLanguage[0]);
+    const language = await SiteLang.create({ name });
+    res.status(201).json(language);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
 
+// Bir dili silme
 exports.deleteLanguage = async (req, res) => {
   const { id } = req.params;
   try {
-    await pool.query('DELETE FROM sites_langs WHERE id = ?', [id]);
+    const language = await SiteLang.findByPk(id);
+    if (!language) {
+      return res.status(404).json({ message: 'Language not found' });
+    }
+
+    await language.destroy();
     res.json({ message: 'Language deleted successfully' });
   } catch (err) {
     console.error(err);
@@ -191,32 +165,39 @@ exports.deleteLanguage = async (req, res) => {
   }
 };
 
+// Kategorileri getirme
 exports.getCategories = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM sites_cats ORDER BY name');
-    res.json(rows || []);
+    const categories = await SiteCat.findAll({ order: [['name', 'ASC']] });
+    res.json(categories);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
 
+// Yeni bir kategori oluşturma
 exports.createCategory = async (req, res) => {
   const { name } = req.body;
   try {
-    const [result] = await pool.query('INSERT INTO sites_cats (name) VALUES (?)', [name]);
-    const [newCategory] = await pool.query('SELECT * FROM sites_cats WHERE id = ?', [result.insertId]);
-    res.status(201).json(newCategory[0]);
+    const category = await SiteCat.create({ name });
+    res.status(201).json(category);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
 
+// Bir kategori silme
 exports.deleteCategory = async (req, res) => {
   const { id } = req.params;
   try {
-    await pool.query('DELETE FROM sites_cats WHERE id = ?', [id]);
+    const category = await SiteCat.findByPk(id);
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    await category.destroy();
     res.json({ message: 'Category deleted successfully' });
   } catch (err) {
     console.error(err);
@@ -225,30 +206,38 @@ exports.deleteCategory = async (req, res) => {
 };
 
 exports.bulkUpdateSites = async (req, res) => {
+  const { minVisitors, maxVisitors, changeValue, changeType, category } = req.body;
+
   try {
-    const { minVisitors, maxVisitors, changeValue, changeType, category } = req.body;
-    let updateQuery;
-    if (changeType === 'decrease') {
-      updateQuery = `
-        UPDATE sites s
-        JOIN site_categories sc ON s.id = sc.site_id
-        JOIN sites_cats c ON sc.category_id = c.id
-        SET s.monthly_visitors = s.monthly_visitors - ?
-        WHERE s.monthly_visitors BETWEEN ? AND ?
-        AND c.name = ?
-      `;
-    } else {
-      updateQuery = `
-        UPDATE sites s
-        JOIN site_categories sc ON s.id = sc.site_id
-        JOIN sites_cats c ON sc.category_id = c.id
-        SET s.monthly_visitors = s.monthly_visitors + ?
-        WHERE s.monthly_visitors BETWEEN ? AND ?
-        AND c.name = ?
-      `;
-    }
-    const result = await pool.query(updateQuery, [changeValue, minVisitors, maxVisitors, category]);
-    res.json({ message: 'Bulk update successful', updatedCount: result[0].affectedRows });
+    // İlk olarak, güncellenecek siteleri kategorileriyle birlikte bulalım
+    const sitesToUpdate = await Site.findAll({
+      include: {
+        model: SiteCat,
+        as: 'categories', // 'as' anahtar kelimesini ekledik
+        where: { name: category },
+        through: { attributes: [] },
+      },
+      where: {
+        monthly_visitors: {
+          [Sequelize.Op.between]: [minVisitors, maxVisitors],
+        },
+      },
+    });
+
+    // Ziyaretçi sayısını artırma veya azaltma işlemini gerçekleştirelim
+    const updatePromises = sitesToUpdate.map(async (site) => {
+      if (changeType === 'decrease') {
+        site.monthly_visitors = Math.max(site.monthly_visitors - changeValue, 0);
+      } else {
+        site.monthly_visitors += changeValue;
+      }
+      return site.save();
+    });
+
+    // Tüm güncellemeleri paralel olarak çalıştır
+    await Promise.all(updatePromises);
+
+    res.json({ message: 'Bulk update successful', updatedCount: sitesToUpdate.length });
   } catch (error) {
     console.error('Error during bulk update:', error);
     res.status(500).json({ error: 'An error occurred during bulk update' });

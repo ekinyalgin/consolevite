@@ -1,21 +1,33 @@
-const mysql = require('mysql2/promise');
+// db.js
+const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const pool = mysql.createPool({
-	host: process.env.DB_HOST,
-	user: process.env.DB_USER,
-	password: process.env.DB_PASSWORD,
-	database: process.env.DB_NAME,
-	port: process.env.DB_PORT
+// Sequelize instance'ı oluşturuyoruz
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'mysql',
 });
 
-pool.getConnection((err, connection) => {
-	if (err) {
-		console.error('Veritabanına bağlanırken hata oluştu:', err);
-	} else {
-		console.log('Veritabanına başarıyla bağlandı');
-		connection.release();
-	}
-});
+/*const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
+  dialect: 'mysql', // or whatever database you're using
+  logging: console.log, // This will log all Sequelize queries
+  dialectOptions: {
+    connectTimeout: 60000
+  },
+});*/
 
-module.exports = pool;
+// Veritabanı bağlantısının doğrulanması
+sequelize.authenticate()
+  .then(() => {
+    console.log('Veritabanı bağlantısı başarılı!');
+  })
+  .catch(err => {
+    console.error('Veritabanı bağlantısı başarısız:', err);
+    console.error('Bağlantı detayları:', {
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      host: process.env.DB_HOST
+    });
+  });
+
+module.exports = sequelize;

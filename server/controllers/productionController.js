@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../config/dbold');
 const fs = require('fs');
 
 exports.uploadVideo = async (req, res) => {

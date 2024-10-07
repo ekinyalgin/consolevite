@@ -3,6 +3,9 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 
+// Projenin kök dizinindeki 'public' klasörünün yolunu belirle
+const PUBLIC_DIR = path.resolve(__dirname, '../../public');
+
 async function downloadReport({ domainName, language, monthlyVisitors, onProgress }) {
     const logMessage = (message) => {
         console.log(message); 
@@ -10,7 +13,7 @@ async function downloadReport({ domainName, language, monthlyVisitors, onProgres
     };
 
     logMessage(`Starting download for domain: ${domainName}`);
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({ headless: false });
     const context = await browser.newContext({ acceptDownloads: true });
     const page = await context.newPage();
 
@@ -25,22 +28,29 @@ async function downloadReport({ domainName, language, monthlyVisitors, onProgres
 
         const previousMonth = getPreviousMonth();
         const targetUrl = `https://sr.toolsminati.com/analytics/organic/pages/?filter=%7B%22search%22%3A%22%22%2C%22intentPositions%22%3A%5B%5D%2C%22advanced%22%3A%7B%220%22%3A%7B%22inc%22%3Atrue%2C%22fld%22%3A%22tf%22%2C%22cri%22%3A%22%3E%22%2C%22val%22%3A${monthlyVisitors}%7D%7D%7D&db=${language}&q=${domainName}&searchType=domain&date=${previousMonth}`;
-
+        await page.waitForTimeout(500);
         logMessage(`Navigating to data page for domain: ${domainName}`);
         await page.goto(targetUrl, { waitUntil: 'load' });
+        await page.waitForTimeout(2500);
 
         await page.click('button[aria-label="Export organic pages data"]');
-        await page.waitForTimeout(2500);
+        await page.waitForTimeout(10000);
         logMessage(`Exporting data for domain: ${domainName}`);
 
         const [download] = await Promise.all([
             page.waitForEvent('download'),
             page.click('text="Excel"')
         ]);
+        await page.waitForTimeout(500);
 
-        const downloadPath = path.resolve(__dirname, '..', 'public', 'site', 'tmp');
+        const downloadPath = path.join(PUBLIC_DIR, 'site', 'tmp');
         const fileName = `${domainName}.xlsx`;
         const filePath = path.join(downloadPath, fileName);
+
+        // Eğer 'site/tmp' klasörü yoksa oluştur
+        if (!fs.existsSync(downloadPath)) {
+            fs.mkdirSync(downloadPath, { recursive: true });
+        }
 
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
