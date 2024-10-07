@@ -53,7 +53,6 @@ const VideoContainer = () => {
         setVideos([savedVideo, ...videos]);
       }
       setSelectedVideo(savedVideo); // Form açık kalması için bu satırı değiştirdik
-      // setIsFormOpen(false); // Bu satırı kaldırdık
       showNotification('Video saved successfully', 'success');
     } catch (error) {
       console.error('Error saving video:', error);
@@ -113,7 +112,7 @@ const VideoContainer = () => {
   }, []);
 
   const showNotification = (text, type) => {
-    setMessage({ text, type });
+    setNotification({ message: text, type }); // Bu satırı değiştirdik
   };
 
   return (

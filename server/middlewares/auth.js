@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const pool = require('../config/dbold');
+const { User, Role } = require('../models');
 
 // Kullanıcı kimlik doğrulaması (hem normal hem admin için)
 const authorize = async (req, res, next) => {
@@ -12,27 +12,24 @@ const authorize = async (req, res, next) => {
     const token = authorizationHeader.split(' ')[1];
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Kullanıcının veritabanındaki bilgilerini alıyoruz
-    const [user] = await pool.query(`
-      SELECT u.id, u.username, r.name as role 
-      FROM users u 
-      JOIN roles r ON u.role_id = r.id 
-      WHERE u.id = ?
-    `, [decodedToken.id]);
+    const user = await User.findOne({
+      where: { id: decodedToken.id },
+      include: [{ model: Role, as: 'Role', attributes: ['name'] }],
+      attributes: ['id', 'username']
+    });
 
-    if (user.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Kullanıcı bilgilerini req.user'a ekliyoruz
     req.user = {
-      id: user[0].id,
-      username: user[0].username,
-      role: user[0].role
+      id: user.id,
+      username: user.username,
+      role: user.Role ? user.Role.name : null
     };
 
     console.log('Kimlik doğrulandı. Kullanıcı:', req.user);
-    next(); // İşleme devam et
+    next();
   } catch (error) {
     console.error('Authorization error:', error);
     return res.status(401).json({ message: 'Invalid token' });
@@ -43,7 +40,7 @@ const authorize = async (req, res, next) => {
 const isAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
     console.log('Kullanıcı admin');
-    return next(); // Adminse devam et
+    return next();
   } else {
     return res.status(403).json({ message: 'Access denied. Admin role required.' });
   }
@@ -54,40 +51,38 @@ const optionalAuth = async (req, res, next) => {
 	try {
 	  const authorizationHeader = req.headers.authorization;
 	  if (!authorizationHeader) {
-		return next(); // Token yoksa doğrulama yapmadan devam et
+		return next();
 	  }
   
 	  const token = authorizationHeader.split(' ')[1];
 	  
 	  // Token doğrulaması başarısız olursa işleme devam et
 	  if (!token || token === "null" || token === "undefined") {
-		return next(); // Token yoksa veya hatalıysa doğrulama olmadan devam et
+		return next();
 	  }
   
 	  const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
   
-	  // Kullanıcının veritabanındaki bilgilerini alıyoruz
-	  const [user] = await pool.query(`
-		SELECT u.id, u.username, r.name as role 
-		FROM users u 
-		JOIN roles r ON u.role_id = r.id 
-		WHERE u.id = ?
-	  `, [decodedToken.id]);
+	  const user = await User.findOne({
+	    where: { id: decodedToken.id },
+	    include: [{ model: Role, attributes: ['name'] }],
+	    attributes: ['id', 'username']
+	  });
   
-	  if (user.length === 0) {
+	  if (!user) {
 		return res.status(404).json({ message: 'User not found' });
 	  }
   
 	  req.user = {
-		id: user[0].id,
-		username: user[0].username,
-		role: user[0].role
+		id: user.id,
+		username: user.username,
+		role: user.Role ? user.Role.name : null
 	  };
   
-	  next(); // İşleme devam et
+	  next();
 	} catch (error) {
 	  console.error('Optional Authorization error:', error.message);
-	  return next(); // Hata olsa bile doğrulama olmadan devam et
+	  return next();
 	}
   };
   

@@ -45,7 +45,7 @@ const TodoList = ({ todos, onEdit, onDelete, onToggleDone, onDateChange, notRevi
                 </button>
             ),
         },
-        { key: 'title', label: 'Title', className: 'w-3/12', render: (value) => <span className="font-semibold">{value}</span> },
+        { key: 'title', label: 'Title', className: 'w-4/12', render: (value) => <span className="font-semibold">{value}</span> },
         {
             key: 'note',
             label: 'Note',

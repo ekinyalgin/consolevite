@@ -10,9 +10,6 @@ import StartExercise from './components/Exercises/StartExercise';
 import SitePage from './components/Sites/SiteContainer';
 import UrlReview from './components/Sites/UrlReview';
 import ProductionComponent from './components/Production/ProductionComponent';
-import MonthlyBalance from './components/Finance/MonthlyBalance'; 
-import ProductPurchasePlanner from './components/Finance/ProductPurchasePlanner';
-import ProductList from './components/Finance/ProductList'; 
 
 const App = () => {
   return (
@@ -26,9 +23,6 @@ const App = () => {
           <Route path="/start-exercise" element={<StartExercise />} />
           <Route path="sites" element={<SitePage />} />
           <Route path="/url-review/:domainName" element={<UrlReview />} />
-          <Route path="finance" element={<MonthlyBalance />} />
-          <Route path="purchase-planner" element={<ProductPurchasePlanner />} />
-          <Route path="product-list" element={<ProductList />} />
         </Route>
         <Route path="/production" element={<ProductionLayout />}>
           <Route index element={<ProductionComponent />} />

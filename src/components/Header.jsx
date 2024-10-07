@@ -76,7 +76,7 @@ const Header = () => {
                 <Link onClick={() => { setIsMenuOpen(false); }} to="/sites" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Sites</Link>
                 <Link onClick={() => { setIsMenuOpen(false); }} to="/inspire" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Inspire</Link>
                 <Link onClick={() => { setIsMenuOpen(false); }} to="/exercises" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Exercises</Link>
-                <Link onClick={() => { setIsMenuOpen(false); }} to="/production" className="text-gray-300 hover:text-blue-400 transition-colors duration-300 text-sm font-medium">Production</Link>
+
               </div>
             )}
             {user.role === 'emine' && (

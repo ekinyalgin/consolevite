@@ -1,6 +1,6 @@
 // controllers/authController.js
 const jwt = require('jsonwebtoken');
-const pool = require('../config/dbold'); // Veritabanı bağlantınızın bulunduğu dosya
+const { User, Role } = require('../models');
 
 // login/success endpoint'i
 exports.loginSuccess = async (req, res) => {
@@ -13,20 +13,26 @@ exports.loginSuccess = async (req, res) => {
         const token = authorizationHeader.split(' ')[1];
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Kullanıcı bilgilerini veritabanından alın ve roles tablosu ile JOIN yapın
-        const [user] = await pool.query(`
-            SELECT u.id, u.username, u.firstname, u.lastname, u.image, r.name as role 
-            FROM users u 
-            JOIN roles r ON u.role_id = r.id 
-            WHERE u.id = ?
-        `, [decodedToken.id]);
+        const user = await User.findOne({
+            where: { id: decodedToken.id },
+            include: [{ model: Role, as: 'Role', attributes: ['name'] }],
+            attributes: ['id', 'username', 'firstname', 'lastname', 'image']
+        });
 
-        if (user.length === 0) {
+        if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Kullanıcı bilgilerini JSON olarak döndürün
-        res.status(200).json({ user: user[0] });
+        const formattedUser = {
+            id: user.id,
+            username: user.username,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            image: user.image,
+            role: user.Role ? user.Role.name : null
+        };
+
+        res.status(200).json({ user: formattedUser });
     } catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).json({ message: 'Internal server error' });
