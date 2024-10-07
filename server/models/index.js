@@ -12,6 +12,8 @@ const Url = require('./urls');
 const Balance = require('./balance');
 const Product = require('./product');
 const TotalBalance = require('./totalBalance');
+const User = require('./user');  // Make sure this line exists
+const Role = require('./role');
 
 // Site ile Category (SiteCat) ilişkisi (Many-to-Many)
 Site.belongsToMany(SiteCat, { 
@@ -37,6 +39,18 @@ SiteLang.belongsToMany(Site, {
   as: 'sites'
 });
 
+// User ve Balance ilişkisi (One-to-Many)
+User.hasMany(Balance, { foreignKey: 'userId' });
+Balance.belongsTo(User, { foreignKey: 'userId' });
+
+// User ve TotalBalance ilişkisi (One-to-One)
+User.hasOne(TotalBalance, { foreignKey: 'userId' });
+TotalBalance.belongsTo(User, { foreignKey: 'userId' });
+
+// User ve Role ilişkisi (Many-to-One)
+User.belongsTo(Role, { foreignKey: 'role_id' });
+Role.hasMany(User, { foreignKey: 'role_id' });
+
 module.exports = {
   sequelize,
   Sequelize,
@@ -50,7 +64,9 @@ module.exports = {
   Url,
   Product,
   Balance,
-  TotalBalance
+  TotalBalance,
+  User,  // Make sure this line exists
+  Role
 };
 
 // Veritabanı senkronizasyonu için bu kodu kullanabilirsiniz
@@ -65,4 +81,5 @@ sequelize.sync({ alter: true })
     console.error('Database synchronization error:', error);
   });
 console.log('Synchronization code executed.');
+
 */

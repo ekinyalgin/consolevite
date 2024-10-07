@@ -14,13 +14,13 @@ const MonthlyBalance = () => {
   const [balance, setBalance] = useState({
     totalIncome: 0,
     totalExpense: 0,
-    netBalance: 0,
     groupedBalances: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchMonthlyBalance = useCallback(async () => {
     setLoading(true);
@@ -33,18 +33,17 @@ const MonthlyBalance = () => {
           return balance.type === 'expense' ? groupSum + parseFloat(balance.totalAmount) : groupSum;
         }, 0);
       }, 0);
-      const netBalance = totalIncome - totalExpense;
 
       setBalance({
         ...response.data,
         totalIncome,
         totalExpense,
-        netBalance,
         groupedBalances: response.data.groupedBalances.sort((a, b) => a.date.localeCompare(b.date)),
       });
       
       const uniqueCategories = [...new Set(response.data.groupedBalances.flatMap(group => group.balances.map(b => b.category)))];
       setCategories(uniqueCategories);
+      setIsAdmin(response.data.isAdmin);
     } catch (error) {
       console.error('Error fetching monthly balance:', error);
       setError('Failed to fetch monthly balance. Please try again.');
@@ -99,18 +98,16 @@ const MonthlyBalance = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h2 className="text-2xl font-bold mb-4">Gelir-Gider Tablosu</h2>
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div className="bg-green-100 p-4 rounded">
-          <p className="text-lg font-semibold">Toplam Gelir:</p>
-          <p className="text-2xl">{balance.totalIncome.toFixed(2)} TL</p>
-        </div>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        {isAdmin && (
+          <div className="bg-green-100 p-4 rounded">
+            <p className="text-lg font-semibold">Toplam Gelir:</p>
+            <p className="text-2xl">{balance.totalIncome.toFixed(2)} TL</p>
+          </div>
+        )}
         <div className="bg-red-100 p-4 rounded">
           <p className="text-lg font-semibold">Toplam Gider:</p>
           <p className="text-2xl">{balance.totalExpense.toFixed(2)} TL</p>
-        </div>
-        <div className="bg-blue-100 p-4 rounded">
-          <p className="text-lg font-semibold">Net Bakiye:</p>
-          <p className="text-2xl">{balance.netBalance.toFixed(2)} TL</p>
         </div>
       </div>
       <button
@@ -128,6 +125,7 @@ const MonthlyBalance = () => {
             onEdit={fetchMonthlyBalance}
             onDecreaseInstallment={handleDecreaseInstallment}
             categories={categories}
+            isAdmin={isAdmin}
           />
         </div>
       ))}
@@ -136,6 +134,7 @@ const MonthlyBalance = () => {
           onBalanceAdded={handleAddBalance}
           onClose={() => setIsModalVisible(false)}
           categories={categories}
+          isAdmin={isAdmin}
         />
       )}
     </div>

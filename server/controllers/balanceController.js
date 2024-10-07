@@ -1,11 +1,17 @@
-const { Balance, TotalBalance } = require('../models');
+const { Balance, TotalBalance, User, Role } = require('../models');
 const { Op } = require('sequelize');
 
 exports.addBalance = async (req, res) => {
   try {
+    const user = await User.findByPk(req.user.id, {
+      include: [{ model: Role, attributes: ['name'] }],
+      attributes: ['id'] // Sadece id'yi seçiyoruz
+    });
+
     const balanceData = {
       ...req.body,
       userId: req.user.id,
+      addedByAdmin: user.Role.name === 'admin',
     };
     const balance = await Balance.create(balanceData);
 
@@ -32,9 +38,21 @@ exports.addBalance = async (req, res) => {
 
 exports.getBalances = async (req, res) => {
   try {
+    const user = await User.findByPk(req.user.id, {
+      include: [{ model: Role, attributes: ['name'] }],
+      attributes: ['id'] // Sadece id'yi seçiyoruz
+    });
+
     const balances = await Balance.findAll({
-      where: { userId: req.user.id },
-      order: [['date', 'ASC']], // Tarihe göre artan sıralama (eskiden yeniye)
+      where: { 
+        userId: req.user.id,
+        [Op.or]: [
+          { type: 'expense' },
+          { type: 'income', addedByAdmin: false },
+          { type: 'income', addedByAdmin: true }
+        ]
+      },
+      order: [['date', 'ASC']],
     });
     
     const totalBalance = await TotalBalance.findOne({ where: { userId: req.user.id } });
@@ -57,11 +75,12 @@ exports.getBalances = async (req, res) => {
     const groupedBalancesArray = Object.entries(groupedBalances).map(([date, data]) => ({
       date,
       ...data
-    })).sort((a, b) => a.date.localeCompare(b.date)); // Tarihe göre artan sıralama (eskiden yeniye)
+    })).sort((a, b) => a.date.localeCompare(b.date));
 
     res.json({
       totalIncome: totalBalance ? totalBalance.totalIncome : 0,
       groupedBalances: groupedBalancesArray,
+      isAdmin: user.Role.name === 'admin',
     });
   } catch (error) {
     console.error('Error in getBalances:', error);

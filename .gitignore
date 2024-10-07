@@ -27,3 +27,4 @@ dist-ssr
 server/public/site/tmp/*.xlsx
 public/site/tmp/*.xlsx
 deploy.sh
+*.production

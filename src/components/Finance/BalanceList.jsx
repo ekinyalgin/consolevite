@@ -10,7 +10,7 @@ const api = axios.create({
   }
 });
 
-const BalanceList = ({ balances, onDelete, onEdit, onDecreaseInstallment, categories }) => {
+const BalanceList = ({ balances, onDelete, onEdit, onDecreaseInstallment, categories, isAdmin }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingBalance, setEditingBalance] = useState(null);
 
@@ -40,6 +40,10 @@ const BalanceList = ({ balances, onDelete, onEdit, onDecreaseInstallment, catego
   };
 
   const renderBalanceRow = (balance) => {
+    if (!isAdmin && balance.type === 'income' && balance.addedByAdmin) {
+      return null;
+    }
+
     const date = new Date(balance.date);
     const formattedDate = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
 
@@ -107,6 +111,7 @@ const BalanceList = ({ balances, onDelete, onEdit, onDecreaseInstallment, catego
           onBalanceAdded={handleUpdateBalance}
           onClose={() => setIsModalVisible(false)}
           categories={categories}
+          isAdmin={isAdmin}
         />
       )}
     </div>

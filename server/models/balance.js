@@ -42,6 +42,10 @@ const Balance = sequelize.define('Balance', {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    addedByAdmin: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
   }, {
       tableName: 'balances',
       timestamps: false,
